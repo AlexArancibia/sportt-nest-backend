@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Category {
+  id           String      @id @default(uuid())
+  name         String
+  parentId     String?     // Permite subcategorías
+  parent       Category?   @relation("CategoryToParent", fields: [parentId], references: [id])
+  children     Category[]  @relation("CategoryToParent")  // Relación inversa para subcategorías
+  products     Product[]   @relation("CategoryToProduct")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Product {
+  id           String      @id @default(uuid())
+  categoryId   String   
+  category     Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  name         String
+  description  String
+  price        Decimal
+  quantity     Int         @default(0)   // Cantidad en inventario
+  isArchived   Boolean     @default(false)
+  variants     Variant[]   @relation("ProductToVariant")
+  images       Image[]     @relation("ProductToImage")
+  collections  Collection[] @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
+  orderItems   OrderItems[] @relation("ProductToOrderItems")  // Relación inversa para OrderItems
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Variant {
+  id           String      @id @default(uuid())
+  productId    String
+  product      Product     @relation("ProductToVariant", fields: [productId], references: [id])
+  price        Decimal     // Precio de la variante
+  quantity     Int         @default(0) // Cantidad disponible de esta variante
+  attributes   Json        // Atributos personalizados de la variante (como Talla, Color, etc.)
+  imageUrl     String?     // Imagen de la variante (opcional)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Image {
+  id           String      @id @default(uuid())
+  productId    String
+  product      Product     @relation("ProductToImage", fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Collection {
+  id           String      @id @default(uuid())
+  name         String
+  description  String
+  products     Product[]   @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
+  isFeatured   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  customerId   String
+  customer     Customer    @relation("CustomerToOrder", fields: [customerId], references: [id])
+  orderItems   OrderItems[]  @relation("OrderToOrderItems")
+  isPaid       Boolean     @default(false)
+  phone        String      @default(" ")
+  address      String      @default(" ")
+  discount     Decimal?    @default(0)  // Descuento en la orden
+  couponId     String?     // Relación con el cupón (si se usa)
+  coupon       Coupon?     @relation("CouponToOrder", fields: [couponId], references: [id])  // Relación con Coupon
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model OrderItems {
+  id           String      @id @default(uuid())
+  orderId      String
+  order        Order       @relation("OrderToOrderItems", fields: [orderId], references: [id])
+  productId    String
+  product      Product     @relation("ProductToOrderItems", fields: [productId], references: [id])  // Relación inversa
+  quantity     Int         @default(1)  // Cantidad del producto en la orden
+  price        Decimal
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Coupon {
+  id           String      @id @default(uuid())
+  code         String      @unique   // Código único del cupón
+  description  String      // Descripción del cupón
+  discount     Decimal     // Valor de descuento (porcentaje o cantidad)
+  startDate    DateTime    // Fecha de inicio de la validez del cupón
+  endDate      DateTime?   // Fecha de expiración del cupón (opcional)
+  isActive     Boolean     @default(true)  // Indica si el cupón está activo
+  conditions   Json        // JSON con condiciones, por ejemplo categorías y productos aplicables
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  orders       Order[]     @relation("CouponToOrder") // Relación inversa con Order
+}
+
+
+model Customer {
+  id           String      @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String      @unique
+  phone        Int
+  address      String
+  orders       Order[]     @relation("CustomerToOrder")  // Relación inversa con Order
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+ 
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  password     String      // Contraseña del usuario
+  firstName    String
+  lastName     String
+  role         UserRole    // Rol del usuario
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  SELLER
+}
