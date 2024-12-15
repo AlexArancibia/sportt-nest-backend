@@ -117,6 +117,7 @@ model Customer {
   lastName     String
   email        String      @unique
   phone        Int
+  password     String? 
   address      String
   orders       Order[]     @relation("CustomerToOrder")  // Relación inversa con Order
   createdAt    DateTime    @default(now())

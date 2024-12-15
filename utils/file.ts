@@ -1,24 +1,16 @@
 import { Request } from 'express';
 import { BadRequestException } from '@nestjs/common';
-import { randomBytes } from 'crypto'; // Usamos el módulo nativo de Node.js
+import { diskStorage } from 'multer';
 
+// Tipo de la función fileNameEditor con los tipos correctos
 export const fileNameEditor = (
   req: Request, 
-  file: Express.Multer.File, 
+  file: Express.Multer.File, // Usa el tipo correcto para el archivo
   callback: (error: any, filename: string) => void,
 ) => {
-  // Obtén la extensión del archivo
-  const fileExtension = file.originalname.split('.').pop();
-  
-  // Genera un nombre de archivo único usando randomBytes (12 bytes) y recorta para tener un nombre más corto
-  const fileName = `${randomBytes(6).toString('hex')}-${file.originalname.slice(0, 8)}.${fileExtension}`;
-  
-  // Limita el nombre del archivo a 20 caracteres si es necesario
- 
-  
-  callback(null, fileName); // Devuelve el nuevo nombre de archivo
+  const newFileName = file.originalname; // O puedes generar un nombre único si es necesario
+  callback(null, newFileName);
 };
-
 
 // Filtro para verificar el tipo de archivo
 export const imageFileFilter = (
