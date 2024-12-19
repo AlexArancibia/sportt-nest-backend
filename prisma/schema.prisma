@@ -29,7 +29,7 @@ model Product {
   price        Decimal
   quantity     Int         @default(0)   // Cantidad en inventario
   isArchived   Boolean     @default(false)
-  coverImage   String      // Imagen principal del producto
+  coverImage   String?      // Imagen principal del producto
   galleryImages String[]   // Imágenes adicionales en formato de arreglo de URLs
   variants     Variant[]   @relation("ProductToVariant")
   collections  Collection[] @relation("ProductToCollection")  // Relación muchos a muchos sin "references"

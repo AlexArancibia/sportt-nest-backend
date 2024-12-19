@@ -1,7 +1,9 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, Body, UseGuards, Get } from '@nestjs/common';
 import { FileService } from './file.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { readdirSync } from 'fs';
+import { join } from 'path'; 
 // Importaciones corregidas (usando rutas relativas)
 import { FILE_UPLOADS_DIR } from 'lib/constants'; // Ajusta la ruta según corresponda
 import { fileNameEditor, imageFileFilter } from 'utils/file'; // Ajusta la ruta según corresponda
@@ -43,5 +45,27 @@ export class FileController {
       size: file.size,
       dto: createFileDto
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('list')
+  async listUploadedFiles() {
+    try {
+      // Lee los archivos del directorio
+      const files = readdirSync(FILE_UPLOADS_DIR).map((file) => ({
+        filename: file,
+        path: join(FILE_UPLOADS_DIR, file),
+      }));
+
+      return {
+        message: 'Files retrieved successfully',
+        files,
+      };
+    } catch (error) {
+      return {
+        message: 'Error retrieving files',
+        error: error.message,
+      };
+    }
   }
 }

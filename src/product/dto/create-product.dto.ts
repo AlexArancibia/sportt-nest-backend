@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class VariantDto {
@@ -11,6 +11,10 @@ class VariantDto {
 
   @IsNotEmpty()
   attributes: any;
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string; // Imagen opcional de la variante
 }
 
 export class CreateProductDto {
@@ -30,6 +34,16 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   categoryId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  coverImage?: string; // Imagen de portada
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  galleryImages?: string[]; // Galería de imágenes
 
   @IsArray()
   @ValidateNested({ each: true })

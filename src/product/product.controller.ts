@@ -18,7 +18,7 @@ import { PublicKeyGuard } from '../auth/guards/public.guard';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  // Crear un producto con sus variantes
+  // Crear un producto con portada y galería
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() createProductDto: CreateProductDto) {
@@ -39,7 +39,7 @@ export class ProductController {
     return this.productService.findOne(id);
   }
 
-  // Actualizar un producto con variantes
+  // Actualizar un producto con portada y galería
   @Put(':id')
   @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
