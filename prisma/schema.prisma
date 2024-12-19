@@ -22,15 +22,16 @@ model Category {
 
 model Product {
   id           String      @id @default(uuid())
-  categoryId   String   
+  categoryId   String
   category     Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
   name         String
   description  String
   price        Decimal
   quantity     Int         @default(0)   // Cantidad en inventario
   isArchived   Boolean     @default(false)
+  coverImage   String      // Imagen principal del producto
+  galleryImages String[]   // Imágenes adicionales en formato de arreglo de URLs
   variants     Variant[]   @relation("ProductToVariant")
-  images       Image[]     @relation("ProductToImage")
   collections  Collection[] @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
   orderItems   OrderItems[] @relation("ProductToOrderItems")  // Relación inversa para OrderItems
   createdAt    DateTime    @default(now())
@@ -49,15 +50,7 @@ model Variant {
   updatedAt    DateTime    @updatedAt
 }
 
-model Image {
-  id           String      @id @default(uuid())
-  productId    String
-  product      Product     @relation("ProductToImage", fields: [productId], references: [id], onDelete: Cascade)
-  url          String
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-}
-
+ 
 model Collection {
   id           String      @id @default(uuid())
   name         String

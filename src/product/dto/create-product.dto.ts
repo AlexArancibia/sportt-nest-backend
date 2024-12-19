@@ -1,22 +1,38 @@
-import { IsString, IsUUID, IsDecimal, IsInt, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class VariantDto {
+  @IsString()
+  @IsNotEmpty()
+  price: string;
+
+  @IsNumber()
+  quantity: number;
+
+  @IsNotEmpty()
+  attributes: any;
+}
 
 export class CreateProductDto {
-  @IsUUID()
-  categoryId: string;
-
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsString()
   description: string;
 
-  @IsDecimal()
+  @IsNumber()
   price: number;
 
-  @IsInt()
-  @IsOptional()
-  quantity?: number;
+  @IsNumber()
+  quantity: number;
 
-  @IsOptional()
-  isArchived?: boolean;
+  @IsString()
+  @IsNotEmpty()
+  categoryId: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantDto)
+  variants?: VariantDto[];
 }
