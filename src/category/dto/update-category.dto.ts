@@ -7,5 +7,5 @@ export class UpdateCategoryDto {
 
   @IsOptional()
   @IsUUID()
-  parentId?: string;  // ID de la categoría principal (si es subcategoría)
+  parentId?: string;
 }

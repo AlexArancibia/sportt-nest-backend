@@ -1,13 +1,11 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateCategoryDto {
+  @IsNotEmpty()
   @IsString()
   name: string;
 
   @IsOptional()
   @IsUUID()
-  parentId?: string;  // ID de la categoría principal (si es subcategoría)
-
-  @IsUUID()
-  storeId: string;  // ID de la tienda a la que pertenece la categoría
+  parentId?: string;
 }
