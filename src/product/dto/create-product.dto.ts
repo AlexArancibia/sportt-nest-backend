@@ -32,8 +32,8 @@ export class CreateProductDto {
   quantity: number;
 
   @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
   @IsString()
   @IsNotEmpty()

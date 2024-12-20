@@ -22,8 +22,8 @@ model Category {
 
 model Product {
   id           String      @id @default(uuid())
-  categoryId   String
-  category     Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  categoryId   String?     // Ahora opcional
+  category     Category?   @relation("CategoryToProduct", fields: [categoryId], references: [id]) // Relación opcional
   name         String
   description  String
   price        Decimal
@@ -37,6 +37,7 @@ model Product {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
+
 
 model Variant {
   id           String      @id @default(uuid())
