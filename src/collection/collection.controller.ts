@@ -12,6 +12,7 @@ import { CollectionService } from './collection.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { PublicKeyGuard } from 'src/auth/guards/public.guard';
 
 @Controller('collections')
 export class CollectionController {
@@ -23,11 +24,13 @@ export class CollectionController {
     return this.collectionService.create(createCollectionDto);
   }
 
+
+  @UseGuards(PublicKeyGuard)
   @Get()
   findAll() {
     return this.collectionService.findAll();
   }
-
+  @UseGuards(PublicKeyGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.collectionService.findOne(id);
