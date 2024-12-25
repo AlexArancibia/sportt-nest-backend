@@ -11,6 +11,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
 import { FILE_UPLOADS_DIR } from 'lib/constants';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { CollectionModule } from './collection/collection.module';
  
 
 @Module({
@@ -27,6 +28,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     OrderItemsModule,
     AuthModule,
     FileModule,
+    CollectionModule,
     MulterModule.register({
       dest: FILE_UPLOADS_DIR,
       limits:{
