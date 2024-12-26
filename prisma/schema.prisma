@@ -31,6 +31,7 @@ model Product {
   isArchived   Boolean     @default(false)
   coverImage   String?      // Imagen principal del producto
   galleryImages String[]   // Imágenes adicionales en formato de arreglo de URLs
+  provider      String?
   variants     Variant[]   @relation("ProductToVariant")
   collections  Collection[] @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
   orderItems   OrderItems[] @relation("ProductToOrderItems")  // Relación inversa para OrderItems

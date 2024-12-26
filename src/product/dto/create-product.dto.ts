@@ -45,6 +45,11 @@ export class CreateProductDto {
   @IsOptional()
   galleryImages?: string[]; // Galería de imágenes
 
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  provider?: string; // Imagen de portada
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => VariantDto)
