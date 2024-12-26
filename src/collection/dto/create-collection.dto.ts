@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateCollectionDto {
   @IsString()
@@ -14,11 +14,7 @@ export class CreateCollectionDto {
   isFeatured?: boolean;
 
   @IsArray()
-  @IsUUID("4", { each: true })
   @IsOptional()
+  @IsString({ each: true }) // Valida que cada elemento en el array sea un string
   productIds?: string[];
-
-  @IsString()
-  @IsOptional()
-  imageUrl?: string;
 }
