@@ -1,25 +1,45 @@
-import { IsString, IsUUID, IsBoolean, IsOptional, IsInt, IsDecimal } from 'class-validator';
+import { IsString, IsBoolean, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class OrderItemDto {
+  @IsString()
+  productId: string;
+
+  @IsOptional()
+  @IsString()
+  variantId?: string;
+
+  @IsNumber()
+  quantity: number;
+
+  @IsNumber()
+  price: number;
+}
 
 export class CreateOrderDto {
-  @IsUUID()
-  storeId: string;  // Relación con la tienda
+  @IsString()
+  customerId: string;
 
-  @IsUUID()
-  customerId: string;  // Relación con el cliente
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  orderItems: OrderItemDto[];
 
-  @IsOptional()
   @IsBoolean()
-  isPaid?: boolean;  // Si la orden está pagada o no
+  isPaid: boolean;
+
+  @IsString()
+  phone: string;
+
+  @IsString()
+  address: string;
+
+  @IsOptional()
+  @IsNumber()
+  discount?: number;
 
   @IsOptional()
   @IsString()
-  phone?: string;  // Teléfono del cliente (opcional)
-
-  @IsOptional()
-  @IsString()
-  address?: string;  // Dirección del cliente (opcional)
-
-  @IsOptional()
-  @IsDecimal()
-  discount?: number;  // Descuento aplicado a la orden (opcional)
+  couponId?: string;
 }
+

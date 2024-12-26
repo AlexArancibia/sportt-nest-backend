@@ -1,54 +1,44 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Put,
-  Delete,
-  UseGuards,
-} from '@nestjs/common';
-import { CustomersService } from './customer.service';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 import { PublicKeyGuard } from 'src/auth/guards/public.guard';
+import { CustomerAuthGuard } from './guards/customer.guard';
+import { LoginCustomerDto } from './dto/login-customer.dto';
 
 @Controller('customers')
-export class CustomersController {
-  constructor(private readonly customersService: CustomersService) {}
 
-  // Crear un nuevo cliente (Protegido por AuthGuard)
+export class CustomerController {
+  constructor(private readonly customersService: CustomerService) {}
+  @UseGuards(PublicKeyGuard)
   @Post()
-  @UseGuards(AuthGuard)
   create(@Body() createCustomerDto: CreateCustomerDto) {
     return this.customersService.create(createCustomerDto);
   }
-
-  // Obtener todos los clientes (Protegido por PublicKeyGuard)
-  @Get()
   @UseGuards(PublicKeyGuard)
+  @Get()
   findAll() {
     return this.customersService.findAll();
   }
-
-  // Obtener un cliente por ID (Protegido por PublicKeyGuard)
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
+  @Get(':id')
   findOne(@Param('id') id: string) {
     return this.customersService.findOne(id);
   }
+  @UseGuards(PublicKeyGuard)
+  @Post('login')
+  login(@Body() loginCustomerDto: LoginCustomerDto) {
+    return this.customersService.login(loginCustomerDto);
+  }
 
-  // Actualizar un cliente (Protegido por AuthGuard)
-  @Put(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(CustomerAuthGuard)
+  @Patch(':id')
   update(@Param('id') id: string, @Body() updateCustomerDto: UpdateCustomerDto) {
     return this.customersService.update(id, updateCustomerDto);
   }
-
-  // Eliminar un cliente (Protegido por AuthGuard)
+  @UseGuards(CustomerAuthGuard)
   @Delete(':id')
-  @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.customersService.remove(id);
   }

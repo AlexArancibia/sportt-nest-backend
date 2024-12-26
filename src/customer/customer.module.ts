@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
-import { CustomersService } from './customer.service';
-import { CustomersController } from './customer.controller';
-import { PrismaModule } from '../prisma/prisma.module';
+import { CustomerService } from './customer.service';
+import { CustomerController } from './customer.controller';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [PrismaModule],
-  controllers: [CustomersController],
-  providers: [CustomersService],
+  imports: [
+    PrismaModule,
+    JwtModule.register({
+      global: true,
+      secret: process.env.CUSTOMER_JWT_SECRET,
+      signOptions: { expiresIn: '2d' }
+    })
+  ],
+  controllers: [CustomerController],
+  providers: [CustomerService],
 })
 export class CustomerModule {}

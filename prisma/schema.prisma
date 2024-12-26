@@ -43,10 +43,11 @@ model Variant {
   id           String      @id @default(uuid())
   productId    String
   product      Product     @relation("ProductToVariant", fields: [productId], references: [id])
-  price        Decimal     // Precio de la variante
-  quantity     Int         @default(0) // Cantidad disponible de esta variante
-  attributes   Json        // Atributos personalizados de la variante (como Talla, Color, etc.)
-  imageUrl     String?     // Imagen de la variante (opcional)
+  price        Decimal
+  quantity     Int         @default(0)
+  attributes   Json
+  imageUrl     String?
+  orderItems   OrderItems[] @relation("VariantToOrderItems")  // New relation
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
@@ -84,8 +85,10 @@ model OrderItems {
   orderId      String
   order        Order       @relation("OrderToOrderItems", fields: [orderId], references: [id])
   productId    String
-  product      Product     @relation("ProductToOrderItems", fields: [productId], references: [id])  // Relación inversa
-  quantity     Int         @default(1)  // Cantidad del producto en la orden
+  product      Product     @relation("ProductToOrderItems", fields: [productId], references: [id])
+  variantId    String?     // New field
+  variant      Variant?    @relation("VariantToOrderItems", fields: [variantId], references: [id])
+  quantity     Int         @default(1)
   price        Decimal
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

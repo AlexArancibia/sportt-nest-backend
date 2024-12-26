@@ -4,7 +4,6 @@ import { CategoryModule } from './category/category.module';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
 import { CustomerModule } from './customer/customer.module';
-import { OrderItemsModule } from './order-items/order-items.module';
 import { AuthModule } from './auth/auth.module';
 import { FileModule } from './file/file.module';
 import { MulterModule } from '@nestjs/platform-express';
@@ -12,6 +11,7 @@ import { join } from 'path';
 import { FILE_UPLOADS_DIR } from 'lib/constants';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CollectionModule } from './collection/collection.module';
+import { CouponModule } from './coupon/coupon.module';
  
 
 @Module({
@@ -25,7 +25,7 @@ import { CollectionModule } from './collection/collection.module';
     ProductModule,
     OrderModule,
     CustomerModule,
-    OrderItemsModule,
+    CouponModule,
     AuthModule,
     FileModule,
     CollectionModule,
@@ -34,7 +34,8 @@ import { CollectionModule } from './collection/collection.module';
       limits:{
         fileSize: 1000 * 1000 * 10,
       }
-    })
+    }),
+    CouponModule
   ],
 })
 export class AppModule {}

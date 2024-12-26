@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsEmail, IsUUID } from 'class-validator';
+import { IsString, IsEmail, IsInt, IsOptional } from 'class-validator';
 
 export class CreateCustomerDto {
   @IsString()
@@ -14,8 +14,8 @@ export class CreateCustomerDto {
   phone: number;
 
   @IsString()
-  address: string;
+  password: string;
 
-  @IsUUID()
-  storeId: string;  // Relación con la tienda
+  @IsString()
+  address: string;
 }

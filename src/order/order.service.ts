@@ -1,52 +1,101 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';  // Importa PrismaService
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
-export class OrdersService {
+export class OrderService {
   constructor(private prisma: PrismaService) {}
 
-  // Crear una nueva orden
   async create(createOrderDto: CreateOrderDto) {
     return this.prisma.order.create({
-      data: createOrderDto,
-    });
-  }
-
-  // Obtener todas las órdenes
-  async findAll() {
-    return this.prisma.order.findMany({
+      data: {
+        customerId: createOrderDto.customerId,
+        isPaid: createOrderDto.isPaid,
+        phone: createOrderDto.phone,
+        address: createOrderDto.address,
+        discount: createOrderDto.discount,
+        couponId: createOrderDto.couponId,
+        orderItems: {
+          create: createOrderDto.orderItems.map(item => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        },
+      },
       include: {
-        orderItems: true,  // Incluir los productos asociados a la orden
-        customer: true,    // Incluir la información del cliente
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+        coupon: true,
       },
     });
   }
 
-  // Obtener una orden por ID
+  async findAll() {
+    return this.prisma.order.findMany({
+      include: {
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+        coupon: true,
+      },
+    });
+  }
+
   async findOne(id: string) {
     return this.prisma.order.findUnique({
       where: { id },
       include: {
-        orderItems: true,  // Incluir los productos asociados a la orden
-        customer: true,    // Incluir la información del cliente
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+        coupon: true,
       },
     });
   }
 
-  // Actualizar una orden
   async update(id: string, updateOrderDto: UpdateOrderDto) {
     return this.prisma.order.update({
       where: { id },
-      data: updateOrderDto,
+      data: {
+        isPaid: updateOrderDto.isPaid,
+        phone: updateOrderDto.phone,
+        address: updateOrderDto.address,
+        discount: updateOrderDto.discount,
+        couponId: updateOrderDto.couponId,
+      },
+      include: {
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+            variant: true,
+          },
+        },
+        coupon: true,
+      },
     });
   }
 
-  // Eliminar una orden
   async remove(id: string) {
     return this.prisma.order.delete({
       where: { id },
     });
   }
 }
+

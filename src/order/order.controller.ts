@@ -1,55 +1,39 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Put,
-  Delete,
-  UseGuards,
-} from '@nestjs/common';
-import { OrdersService } from './order.service';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { PublicKeyGuard } from '../auth/guards/public.guard';
+import { CustomerAuthGuard } from 'src/customer/guards/customer.guard';
 
 @Controller('orders')
-export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
-
-  // Crear una nueva orden (Protegido por AuthGuard)
+ 
+export class OrderController {
+  constructor(private readonly orderService: OrderService) {}
+  
+  @UseGuards(CustomerAuthGuard)
   @Post()
-  @UseGuards(AuthGuard)
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
+    return this.orderService.create(createOrderDto);
   }
-
-  // Obtener todas las órdenes (Protegido por PublicKeyGuard)
+  @UseGuards(AuthGuard)
   @Get()
-  @UseGuards(PublicKeyGuard)
   findAll() {
-    return this.ordersService.findAll();
+    return this.orderService.findAll();
   }
-
-  // Obtener una orden por ID (Protegido por PublicKeyGuard)
+  @UseGuards(CustomerAuthGuard)
   @Get(':id')
-  @UseGuards(PublicKeyGuard)
   findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(id);
+    return this.orderService.findOne(id);
   }
-
-  // Actualizar una orden (Protegido por AuthGuard)
-  @Put(':id')
   @UseGuards(AuthGuard)
+  @Patch(':id')
   update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(id, updateOrderDto);
+    return this.orderService.update(id, updateOrderDto);
   }
-
-  // Eliminar una orden (Protegido por AuthGuard)
-  @Delete(':id')
   @UseGuards(AuthGuard)
+  @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.ordersService.remove(id);
+    return this.orderService.remove(id);
   }
 }
+
