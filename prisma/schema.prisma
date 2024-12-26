@@ -58,6 +58,8 @@ model Collection {
   description  String
   products     Product[]   @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
   isFeatured   Boolean     @default(false)
+  imageUrl     String?     // Imagen de la variante (opcional)
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
