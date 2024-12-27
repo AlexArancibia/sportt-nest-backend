@@ -4,20 +4,17 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
-export class OrderService {
-  constructor(private prisma: PrismaService) {}
+export class OrdersService {
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createOrderDto: CreateOrderDto) {
+    const { orderItems, ...orderData } = createOrderDto;
+
     return this.prisma.order.create({
       data: {
-        customerId: createOrderDto.customerId,
-        isPaid: createOrderDto.isPaid,
-        phone: createOrderDto.phone,
-        address: createOrderDto.address,
-        discount: createOrderDto.discount,
-        couponId: createOrderDto.couponId,
+        ...orderData,
         orderItems: {
-          create: createOrderDto.orderItems.map(item => ({
+          create: orderItems.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
@@ -25,70 +22,41 @@ export class OrderService {
           })),
         },
       },
-      include: {
-        customer: true,
-        orderItems: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-        coupon: true,
-      },
+      include: { orderItems: true },
     });
   }
 
   async findAll() {
     return this.prisma.order.findMany({
-      include: {
-        customer: true,
-        orderItems: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-        coupon: true,
-      },
+      include: { orderItems: true },
     });
   }
 
   async findOne(id: string) {
     return this.prisma.order.findUnique({
       where: { id },
-      include: {
-        customer: true,
-        orderItems: {
-          include: {
-            product: true,
-            variant: true,
-          },
-        },
-        coupon: true,
-      },
+      include: { orderItems: true },
     });
   }
 
   async update(id: string, updateOrderDto: UpdateOrderDto) {
+    const { orderItems, ...orderData } = updateOrderDto;
+
     return this.prisma.order.update({
       where: { id },
       data: {
-        isPaid: updateOrderDto.isPaid,
-        phone: updateOrderDto.phone,
-        address: updateOrderDto.address,
-        discount: updateOrderDto.discount,
-        couponId: updateOrderDto.couponId,
-      },
-      include: {
-        customer: true,
+        ...orderData,
         orderItems: {
-          include: {
-            product: true,
-            variant: true,
-          },
+          deleteMany: {}, // Borra los items previos
+          create: orderItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+          })),
         },
-        coupon: true,
       },
+      include: { orderItems: true },
     });
   }
 
@@ -98,4 +66,3 @@ export class OrderService {
     });
   }
 }
-

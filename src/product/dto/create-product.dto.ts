@@ -13,6 +13,11 @@ class VariantDto {
   attributes: any;
 
   @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  sku?: string; 
+
+  @IsString()
   @IsOptional()
   imageUrl?: string; // Imagen opcional de la variante
 }
@@ -48,7 +53,12 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  provider?: string; // Imagen de portada
+  provider?: string;  
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  sku?: string;  
 
   @IsArray()
   @ValidateNested({ each: true })

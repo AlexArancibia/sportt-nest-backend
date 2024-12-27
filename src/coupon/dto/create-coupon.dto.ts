@@ -1,5 +1,6 @@
-import { IsString, IsNumber, IsDateString, IsBoolean, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsDate, IsBoolean, IsOptional, IsObject } from 'class-validator';
 import { Type } from 'class-transformer';
+import { DiscountType } from '@prisma/client';
 
 export class CreateCouponDto {
   @IsString()
@@ -11,19 +12,22 @@ export class CreateCouponDto {
   @IsNumber()
   discount: number;
 
-  @IsDateString()
-  startDate: string;
+  @IsEnum(DiscountType)
+  type: DiscountType;
+
+  @IsDate()
+  @Type(() => Date)
+  startDate: Date;
 
   @IsOptional()
-  @IsDateString()
-  endDate?: string;
+  @IsDate()
+  @Type(() => Date)
+  endDate?: Date;
 
+  @IsOptional()
   @IsBoolean()
-  isActive: boolean;
+  isActive?: boolean;
 
-  @IsOptional()
   @IsObject()
-  @Type(() => Object)
-  conditions?: Record<string, any>;
+  conditions: Record<string, any>;
 }
-

@@ -1,39 +1,53 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { OrderService } from './order.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import { OrdersService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CustomerAuthGuard } from 'src/customer/guards/customer.guard';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { PublicKeyGuard } from 'src/auth/guards/public.guard';
 
 @Controller('orders')
- 
-export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
-  
-  @UseGuards(CustomerAuthGuard)
+export class OrdersController {
+  constructor(private readonly ordersService: OrdersService) {}
+
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.create(createOrderDto);
+    return this.ordersService.create(createOrderDto);
   }
-  @UseGuards(AuthGuard)
+
+  @UseGuards(PublicKeyGuard)
   @Get()
   findAll() {
-    return this.orderService.findAll();
+    return this.ordersService.findAll();
   }
-  @UseGuards(CustomerAuthGuard)
+
+  @UseGuards(PublicKeyGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.orderService.findOne(id);
+    return this.ordersService.findOne(id);
   }
+
   @UseGuards(AuthGuard)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.orderService.update(id, updateOrderDto);
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateOrderDto: UpdateOrderDto,
+  ) {
+    return this.ordersService.update(id, updateOrderDto);
   }
+
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.orderService.remove(id);
+    return this.ordersService.remove(id);
   }
 }
-

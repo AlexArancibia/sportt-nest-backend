@@ -12,6 +12,7 @@ import { FILE_UPLOADS_DIR } from 'lib/constants';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CollectionModule } from './collection/collection.module';
 import { CouponModule } from './coupon/coupon.module';
+import { ShippingmethodModule } from './shippingmethod/shippingmethod.module';
  
 
 @Module({
@@ -35,7 +36,8 @@ import { CouponModule } from './coupon/coupon.module';
         fileSize: 1000 * 1000 * 10,
       }
     }),
-    CouponModule
+    CouponModule,
+    ShippingmethodModule
   ],
 })
 export class AppModule {}

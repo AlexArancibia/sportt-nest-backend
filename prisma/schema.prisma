@@ -32,13 +32,13 @@ model Product {
   coverImage   String?      // Imagen principal del producto
   galleryImages String[]   // Imágenes adicionales en formato de arreglo de URLs
   provider      String?
+  sku          String?      @unique  // New field for SKU
   variants     Variant[]   @relation("ProductToVariant")
   collections  Collection[] @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
   orderItems   OrderItems[] @relation("ProductToOrderItems")  // Relación inversa para OrderItems
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
-
 
 model Variant {
   id           String      @id @default(uuid())
@@ -48,12 +48,12 @@ model Variant {
   quantity     Int         @default(0)
   attributes   Json
   imageUrl     String?
+  sku          String?      @unique  // New field for SKU
   orderItems   OrderItems[] @relation("VariantToOrderItems")  // New relation
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
 
- 
 model Collection {
   id           String      @id @default(uuid())
   name         String
@@ -61,24 +61,34 @@ model Collection {
   products     Product[]   @relation("ProductToCollection")  // Relación muchos a muchos sin "references"
   isFeatured   Boolean     @default(false)
   imageUrl     String?     // Imagen de la variante (opcional)
-
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
 
 model Order {
-  id           String      @id @default(uuid())
-  customerId   String
-  customer     Customer    @relation("CustomerToOrder", fields: [customerId], references: [id])
-  orderItems   OrderItems[]  @relation("OrderToOrderItems")
-  isPaid       Boolean     @default(false)
-  phone        String      @default(" ")
-  address      String      @default(" ")
-  discount     Decimal?    @default(0)  // Descuento en la orden
-  couponId     String?     // Relación con el cupón (si se usa)
-  coupon       Coupon?     @relation("CouponToOrder", fields: [couponId], references: [id])  // Relación con Coupon
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id                 String           @id @default(uuid())
+  orderNumber        Int              @default(autoincrement()) @unique // Número del pedido secuencial
+  customerId         String
+  customer           Customer         @relation("CustomerToOrder", fields: [customerId], references: [id])
+  orderItems         OrderItems[]      @relation("OrderToOrderItems") // Relación con los productos pedidos
+  paymentStatus      PaymentStatus    @default(PENDING) // Estado del pago
+  fulfillmentStatus  FulfillmentStatus @default(NOT_FULFILLED) // Estado del cumplimiento
+  phone              Int
+  address            String           @default(" ")
+  discount           Decimal?         @default(0.0) // Descuento total aplicado a la orden
+  couponId           String?          // ID del cupón aplicado (si existe)
+  coupon             Coupon?          @relation("CouponToOrder", fields: [couponId], references: [id]) // Relación con el cupón
+  shippingMethodId   String
+  shippingMethod     ShippingMethod   @relation(fields: [shippingMethodId], references: [id]) // Relación con el método de envío
+  subtotal           Decimal          // Subtotal antes de descuentos y envío
+  total              Decimal          // Total final (subtotal - descuentos + costo de envío)
+  note               String?          // Nota adicional del cliente o administrador
+  tags               String[]         @default([]) // Etiquetas para clasificación
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([orderNumber])
+  @@index([customerId])
 }
 
 model OrderItems {
@@ -100,6 +110,7 @@ model Coupon {
   code         String      @unique   // Código único del cupón
   description  String      // Descripción del cupón
   discount     Decimal     // Valor de descuento (porcentaje o cantidad)
+  type         DiscountType // Tipo de descuento (porcentaje o fijo)
   startDate    DateTime    // Fecha de inicio de la validez del cupón
   endDate      DateTime?   // Fecha de expiración del cupón (opcional)
   isActive     Boolean     @default(true)  // Indica si el cupón está activo
@@ -110,6 +121,17 @@ model Coupon {
   orders       Order[]     @relation("CouponToOrder") // Relación inversa con Order
 }
 
+model ShippingMethod {
+  id           String      @id @default(uuid())
+  name         String      // Nombre del método de envío (e.g., "Estándar", "Express", "Recogida en tienda")
+  description  String      // Descripción del método de envío
+  price        Decimal     // Precio del método de envío
+  estimatedDeliveryTime String // Tiempo estimado de entrega (e.g., "2-3 días hábiles")
+  isActive     Boolean     @default(true) // Indica si el método de envío está activo
+  orders       Order[]     // Relación inversa con Order
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
 
 model Customer {
   id           String      @id @default(uuid())
@@ -124,8 +146,6 @@ model Customer {
   updatedAt    DateTime    @updatedAt
 }
 
- 
-
 model User {
   id           String      @id @default(uuid())
   email        String      @unique
@@ -137,7 +157,27 @@ model User {
   updatedAt    DateTime    @updatedAt
 }
 
+enum PaymentStatus {
+  PENDING        // Pago pendiente
+  PAID           // Pagado
+  PARTIALLY_PAID // Pagado parcialmente
+  REFUNDED       // Reembolsado
+}
+
+enum FulfillmentStatus {
+  NOT_FULFILLED  // No cumplido
+  PARTIALLY_FULFILLED // Parcialmente cumplido
+  FULFILLED      // Cumplido completamente
+  CANCELED       // Cancelado
+}
+
+enum DiscountType {
+  PERCENTAGE // Descuento en porcentaje
+  FIXED      // Descuento fijo en dinero
+}
+
 enum UserRole {
   ADMIN
   SELLER
 }
+
