@@ -28,7 +28,7 @@ model Product {
   description  String
   price        Decimal
   quantity     Int         @default(0)   // Cantidad en inventario
-  isActive     Boolean     @default(true)
+  isActive     Boolean?    @default(true)
   coverImage   String?      // Imagen principal del producto
   galleryImages String[]   // Imágenes adicionales en formato de arreglo de URLs
   provider      String?
@@ -44,7 +44,7 @@ model Variant {
   id           String      @id @default(uuid())
   productId    String
   product      Product     @relation("ProductToVariant", fields: [productId], references: [id])
-  isActive     Boolean     @default(true)
+  isActive     Boolean?     @default(true)
   price        Decimal
   quantity     Int         @default(0)
   attributes   Json

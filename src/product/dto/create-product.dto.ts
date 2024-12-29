@@ -23,6 +23,11 @@ class VariantDto {
 }
 
 export class CreateProductDto {
+  
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -36,9 +41,10 @@ export class CreateProductDto {
   @IsNumber()
   quantity: number;
 
+
   @IsString()
   @IsOptional()
-  categoryId?: string;
+  isActive?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -64,4 +70,9 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => VariantDto)
   variants?: VariantDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantDto)
+  collections?: VariantDto[];
 }
