@@ -13,6 +13,10 @@ class VariantDto {
   attributes: any;
 
   @IsString()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsString()
   @IsNotEmpty()
   @IsOptional()
   sku?: string; 
@@ -44,7 +48,7 @@ export class CreateProductDto {
 
   @IsString()
   @IsOptional()
-  isActive?: string;
+  isActive?: boolean;
 
   @IsString()
   @IsNotEmpty()
