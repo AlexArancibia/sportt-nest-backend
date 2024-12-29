@@ -13,6 +13,10 @@ export class CreateCollectionDto {
   @IsOptional()
   isFeatured?: boolean;
 
+  @IsString()
+  @IsNotEmpty()
+  imageUrl: string;
+
   @IsArray()
   @IsOptional()
   @IsString({ each: true }) // Valida que cada elemento en el array sea un string
