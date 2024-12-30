@@ -24,12 +24,12 @@ CREATE TABLE "Category" (
 -- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL,
-    "categoryId" TEXT,
+    "categoryId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" DECIMAL(65,30) NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
-    "isArchived" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN DEFAULT true,
     "coverImage" TEXT,
     "galleryImages" TEXT[],
     "provider" TEXT,
@@ -44,6 +44,7 @@ CREATE TABLE "Product" (
 CREATE TABLE "Variant" (
     "id" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
+    "isActive" BOOLEAN DEFAULT true,
     "price" DECIMAL(65,30) NOT NULL,
     "quantity" INTEGER NOT NULL DEFAULT 0,
     "attributes" JSONB NOT NULL,
@@ -203,7 +204,7 @@ CREATE INDEX "_ProductToCollection_B_index" ON "_ProductToCollection"("B");
 ALTER TABLE "Category" ADD CONSTRAINT "Category_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Variant" ADD CONSTRAINT "Variant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
