@@ -10,6 +10,8 @@ import { join } from 'path';
 import { FILE_UPLOADS_DIR } from 'lib/constants';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CollectionModule } from './collection/collection.module';
+import { CurrencyModule } from './currency/currency.module';
+import { ShopModule } from './shop/shop.module';
  
  
 
@@ -35,6 +37,10 @@ import { CollectionModule } from './collection/collection.module';
     }),
  
     CollectionModule,
+ 
+    CurrencyModule,
+ 
+    ShopModule,
  
   ],
 })

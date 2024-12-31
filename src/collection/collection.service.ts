@@ -14,13 +14,31 @@ export class CollectionService {
   }
 
   async findAll() {
-    return this.prisma.collection.findMany();
+    return this.prisma.collection.findMany({
+      include: {
+        products: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: string) {
     const collection = await this.prisma.collection.findUnique({
       where: { id },
-      include: { products: true },
+      include: {
+        products: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+      },
     });
 
     if (!collection) {
@@ -48,6 +66,54 @@ export class CollectionService {
       });
     } catch (error) {
       throw new NotFoundException(`Collection with ID ${id} not found`);
+    }
+  }
+
+  async addProductToCollection(collectionId: string, productId: string) {
+    try {
+      return await this.prisma.collection.update({
+        where: { id: collectionId },
+        data: {
+          products: {
+            connect: { id: productId },
+          },
+        },
+        include: {
+          products: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw new NotFoundException(`Collection or Product not found`);
+    }
+  }
+
+  async removeProductFromCollection(collectionId: string, productId: string) {
+    try {
+      return await this.prisma.collection.update({
+        where: { id: collectionId },
+        data: {
+          products: {
+            disconnect: { id: productId },
+          },
+        },
+        include: {
+          products: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw new NotFoundException(`Collection or Product not found`);
     }
   }
 }

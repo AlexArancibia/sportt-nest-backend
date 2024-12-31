@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateCollectionDto {
   @IsString()
@@ -10,5 +10,9 @@ export class CreateCollectionDto {
 
   @IsString()
   slug: string;
+
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
 }
 

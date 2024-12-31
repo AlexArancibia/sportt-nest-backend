@@ -179,7 +179,7 @@ model Product {
   status            ProductStatus   @default(DRAFT) // Current status of the product
   categories        Category[]      // Categories the product belongs to
   variants          ProductVariant[] // Variants of the product
-  images            Image[]         // Images of the product
+  imageUrls         String[]        // URLs of the product images
   collections       Collection[]    // Collections the product belongs to
   orderItems        OrderItem[]     // Order items referencing this product
   sku               String?         @unique // Stock Keeping Unit
@@ -213,8 +213,7 @@ model ProductVariant {
   title             String        // Title of the variant
   sku               String?       @unique // Stock Keeping Unit for the variant
   attributes        Json?         // JSON object containing variant attributes
-  image             Image?        @relation(fields: [imageId], references: [id])
-  imageId           String?       @unique // ID of the variant's image
+  imageUrl          String?       // URL of the variant's image
   prices            VariantPrice[] // Prices of the variant in different currencies
   compareAtPrice    Decimal?      // Original price for comparison (e.g., for sales)
   inventoryQuantity Int           @default(0) // Available quantity of this variant
@@ -238,20 +237,6 @@ model VariantPrice {
   updatedAt  DateTime       @updatedAt
 
   @@unique([variantId, currencyId])
-}
-
-// Model for images (can be used for products, variants, collections, etc.)
-model Image {
-  id        String   @id @default(dbgenerated("'img_' || substr(gen_random_uuid()::text, 1, 13)"))
-  product   Product? @relation(fields: [productId], references: [id])
-  productId String?  // ID of the product this image belongs to (if applicable)
-  variant   ProductVariant? // Variant this image belongs to (if applicable)
-  collection Collection? // Collection this image belongs to (if applicable)
-  src       String   // URL or path of the image
-  alt       String?  // Alternative text for the image
-  position  Int      @default(1) // Position of the image in the list
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 // Model for customers
@@ -435,8 +420,7 @@ model Collection {
   description String?   // Description of the collection
   slug        String    @unique // URL-friendly version of the title
   products    Product[] // Products in this collection
-  image       Image?    @relation(fields: [imageId], references: [id])
-  imageId     String?   @unique
+  imageUrl    String?   // URL of the collection's image
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

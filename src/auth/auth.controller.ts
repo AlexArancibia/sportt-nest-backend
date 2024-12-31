@@ -4,16 +4,17 @@ import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
 import { LoginUserDto } from './dto/login-auth.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { PublicKeyGuard } from './guards/public.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
+  @UseGuards(PublicKeyGuard)
   @Post('register')
   create(@Body() createUserDto: CreateUserDto) {
     return this.authService.create(createUserDto);
   }
-
+  @UseGuards(PublicKeyGuard)
   @Post('login')
   login(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
