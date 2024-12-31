@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
- 
+
 @Injectable()
-export class CategoriesService {
+export class CategoryService {
   constructor(private prisma: PrismaService) {}
 
   // Crear una nueva categoría
@@ -50,3 +50,4 @@ export class CategoriesService {
     });
   }
 }
+

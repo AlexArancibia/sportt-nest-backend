@@ -2,36 +2,45 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
-import { LoginDto } from './dto/login-auth.dto';
-import { AuthGuard } from './guards/auth.guard';
-import { PublicKeyGuard } from './guards/public.guard';
+import { LoginUserDto } from './dto/login-auth.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(AuthGuard)
-  @Get('get-users')
-  getUsers() {
-    return this.authService.getUsers()
+  @Post('register')
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.authService.create(createUserDto);
   }
-  @UseGuards(PublicKeyGuard)
+
   @Post('login')
-  login(@Body() loginDto:LoginDto) {
-    return this.authService.logIn(loginDto)
+  login(@Body() loginUserDto: LoginUserDto) {
+    return this.authService.login(loginUserDto);
   }
 
-  @UseGuards(PublicKeyGuard)
-  @Post('sign-up')
-  signup(@Body() createUserDto: CreateUserDto){
-    return this.authService.createUser(createUserDto)
-  }
-  @UseGuards(PublicKeyGuard)
   @UseGuards(AuthGuard)
-  @Patch('update-user')
-  updateUser(@Body() updateUserDto: UpdateUserDto) {
-    return this.authService.updateUser(updateUserDto);
+  @Get()
+  findAll() {
+    return this.authService.findAll();
   }
 
- 
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.authService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.authService.update(id, updateUserDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.authService.remove(id);
+  }
 }
+

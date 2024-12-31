@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 
@@ -7,68 +7,48 @@ import { UpdateCollectionDto } from './dto/update-collection.dto';
 export class CollectionService {
   constructor(private prisma: PrismaService) {}
 
-  // Crear una nueva colección
   async create(createCollectionDto: CreateCollectionDto) {
-    const { productIds, ...collectionData } = createCollectionDto;
-
     return this.prisma.collection.create({
-      data: {
-        ...collectionData,
-        products: productIds
-          ? {
-              connect: productIds.map((id) => ({ id })), // Conectar productos existentes por ID
-            }
-          : undefined,
-      },
-      include: {
-        products: true, // Incluir los productos asociados
-      },
+      data: createCollectionDto,
     });
   }
 
-  // Obtener todas las colecciones
   async findAll() {
-    return this.prisma.collection.findMany({
-      include: {
-        products: true, // Incluir los productos asociados
-      },
-    });
+    return this.prisma.collection.findMany();
   }
 
-  // Obtener una colección por ID
   async findOne(id: string) {
-    return this.prisma.collection.findUnique({
+    const collection = await this.prisma.collection.findUnique({
       where: { id },
-      include: {
-        products: true, // Incluir los productos asociados
-      },
+      include: { products: true },
     });
+
+    if (!collection) {
+      throw new NotFoundException(`Collection with ID ${id} not found`);
+    }
+
+    return collection;
   }
 
-  // Actualizar una colección
   async update(id: string, updateCollectionDto: UpdateCollectionDto) {
-    const { productIds, ...collectionData } = updateCollectionDto;
-
-    return this.prisma.collection.update({
-      where: { id },
-      data: {
-        ...collectionData,
-        products: productIds
-          ? {
-              set: productIds.map((id) => ({ id })), // Actualizar las asociaciones
-            }
-          : undefined,
-      },
-      include: {
-        products: true, // Incluir los productos asociados
-      },
-    });
+    try {
+      return await this.prisma.collection.update({
+        where: { id },
+        data: updateCollectionDto,
+      });
+    } catch (error) {
+      throw new NotFoundException(`Collection with ID ${id} not found`);
+    }
   }
 
-  // Eliminar una colección
   async remove(id: string) {
-    return this.prisma.collection.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.collection.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw new NotFoundException(`Collection with ID ${id} not found`);
+    }
   }
 }
+

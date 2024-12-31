@@ -1,11 +1,10 @@
-import { Injectable, ConflictException, NotFoundException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { LoginCustomerDto } from './dto/login-customer.dto';
-import * as bcrypt from 'bcrypt';
-import { encrypt } from 'lib/bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { encrypt, compare } from '../../lib/bcrypt';
 
 @Injectable()
 export class CustomerService {
@@ -15,64 +14,63 @@ export class CustomerService {
   ) {}
 
   async create(createCustomerDto: CreateCustomerDto) {
-    const existingCustomer = await this.prisma.customer.findUnique({
-      where: { email: createCustomerDto.email },
+    const { addresses, ...customerData } = createCustomerDto;
+    const hashedPassword = await encrypt(customerData.password);
+
+    return this.prisma.$transaction(async (prisma) => {
+      const customer = await prisma.customer.create({
+        data: {
+          ...customerData,
+          password: hashedPassword,
+          addresses: {
+            create: addresses.map((address, index) => ({
+              ...address,
+              isDefault: index === 0 // Set the first address as default
+            }))
+          },
+        },
+        include: {
+          addresses: true,
+        },
+      });
+
+      // Remove password from the returned object
+      const { password, ...customerWithoutPassword } = customer;
+      return customerWithoutPassword;
     });
-
-    if (existingCustomer) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const hashedPassword = await encrypt(createCustomerDto.password);
-
-    const customer = await this.prisma.customer.create({
-      data: {
-        ...createCustomerDto,
-        password: hashedPassword,
-      },
-    });
-
-    const { password, ...result } = customer;
-    return result;
   }
 
   async login(loginCustomerDto: LoginCustomerDto) {
-
     try {
-    const customer = await this.prisma.customer.findUnique({
-      where: { email: loginCustomerDto.email },
-    });
+      const customer = await this.prisma.customer.findUnique({
+        where: { email: loginCustomerDto.email },
+      });
 
-    if (!customer) {
-      throw new UnauthorizedException('Email o contraseña inválidos.');
-    }
+      if (!customer) {
+        throw new UnauthorizedException('Email o contraseña inválidos.');
+      }
 
-    const isPasswordMatch = await bcrypt.compare(loginCustomerDto.password, customer.password);
+      const isPasswordMatch = await compare(loginCustomerDto.password, customer.password);
 
-    if (!isPasswordMatch) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+      if (!isPasswordMatch) {
+        throw new UnauthorizedException('Email o contraseña inválidos.');
+      }
 
-    const { password, ...customerWithoutPassword } = customer;
-    const access_token = await this.jwtService.signAsync(customerWithoutPassword);
-    return { access_token, userInfo: customerWithoutPassword };
-  } catch(error){
+      const { password, ...customerWithoutPassword } = customer;
+      const access_token = await this.jwtService.signAsync(customerWithoutPassword);
+      return { access_token, userInfo: customerWithoutPassword };
+    } catch(error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error al hacer login');
-  }
-
+    }
   }
 
   async findAll() {
     return this.prisma.customer.findMany({
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        address: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        addresses: true,
       },
     });
   }
@@ -80,15 +78,8 @@ export class CustomerService {
   async findOne(id: string) {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        address: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        addresses: true,
       },
     });
 
@@ -100,45 +91,71 @@ export class CustomerService {
   }
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto) {
-    if (updateCustomerDto.password) {
-      updateCustomerDto.password = await bcrypt.hash(updateCustomerDto.password, 10);
-    }
+    const { addresses, ...customerData } = updateCustomerDto;
 
-    try {
-      const updatedCustomer = await this.prisma.customer.update({
+    return this.prisma.$transaction(async (prisma) => {
+      const updatedCustomer = await prisma.customer.update({
         where: { id },
-        data: updateCustomerDto,
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          address: true,
-          createdAt: true,
-          updatedAt: true,
+        data: {
+          ...customerData,
+          addresses: addresses ? {
+            upsert: addresses.map(address => ({
+              where: { id: address.id || 'new' }, // 'new' for creating new addresses
+              create: {
+                address1: address.address1,
+                address2: address.address2,
+                city: address.city,
+                province: address.province,
+                zip: address.zip,
+                country: address.country,
+                phone: address.phone,
+                isDefault: address.isDefault,
+              },
+              update: {
+                address1: address.address1,
+                address2: address.address2,
+                city: address.city,
+                province: address.province,
+                zip: address.zip,
+                country: address.country,
+                phone: address.phone,
+                isDefault: address.isDefault,
+              },
+            })),
+          } : undefined,
+        },
+        include: {
+          addresses: true,
         },
       });
 
       return updatedCustomer;
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Customer with ID ${id} not found`);
-      }
-      throw error;
-    }
+    });
   }
 
   async remove(id: string) {
-    try {
-      await this.prisma.customer.delete({
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: { addresses: true },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${id} not found`);
+    }
+
+    return this.prisma.$transaction(async (prisma) => {
+      // Delete all addresses associated with the customer
+      await prisma.customerAddress.deleteMany({
+        where: { customerId: id },
+      });
+
+      // Delete the customer
+      const deletedCustomer = await prisma.customer.delete({
         where: { id },
       });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Customer with ID ${id} not found`);
-      }
-      throw error;
-    }
+
+      return deletedCustomer;
+    });
   }
 }
+
