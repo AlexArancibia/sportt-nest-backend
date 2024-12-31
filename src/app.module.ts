@@ -12,6 +12,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { CollectionModule } from './collection/collection.module';
 import { CurrencyModule } from './currency/currency.module';
 import { ShopModule } from './shop/shop.module';
+import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
+import { ProductModule } from './product/product.module';
  
  
 
@@ -41,6 +43,10 @@ import { ShopModule } from './shop/shop.module';
     CurrencyModule,
  
     ShopModule,
+ 
+    ExchangeRateModule,
+ 
+    ProductModule,
  
   ],
 })
