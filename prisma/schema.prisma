@@ -182,7 +182,7 @@ model Product {
   imageUrls         String[]        // URLs of the product images
   collections       Collection[]    // Collections the product belongs to
   orderItems        OrderItem[]     // Order items referencing this product
-  sku               String?         @unique // Stock Keeping Unit
+  sku               String?          // Stock Keeping Unit
   inventoryQuantity Int             @default(0) // Available quantity in inventory
   weightValue       Decimal?        // Weight of the product
   weightUnit        String?         // Unit of the weight (e.g., kg, lb)
@@ -211,7 +211,7 @@ model ProductVariant {
   product           Product       @relation(fields: [productId], references: [id])
   productId         String        // ID of the parent product
   title             String        // Title of the variant
-  sku               String?       @unique // Stock Keeping Unit for the variant
+  sku               String?       // Stock Keeping Unit for the variant
   attributes        Json?         // JSON object containing variant attributes
   imageUrl          String?       // URL of the variant's image
   prices            VariantPrice[] // Prices of the variant in different currencies
