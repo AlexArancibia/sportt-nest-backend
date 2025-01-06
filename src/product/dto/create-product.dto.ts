@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsArray, ValidateNested, IsUUID, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsArray, ValidateNested, IsUUID, Min, IsJSON } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProductStatus } from '@prisma/client';
 
@@ -39,6 +39,10 @@ export class CreateProductVariantDto {
   @ValidateNested({ each: true })
   @Type(() => CreateProductPriceDto)
   prices: CreateProductPriceDto[];
+
+
+  @IsJSON()
+  attributes: Record<string, any>;
 }
 
 export class CreateProductDto {

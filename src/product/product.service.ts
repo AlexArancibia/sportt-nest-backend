@@ -114,6 +114,7 @@ export class ProductService {
               title: variant.title,
               sku: variant.sku,
               imageUrl: variant.imageUrl,
+              attributes:variant.attributes,
               inventoryQuantity: variant.inventoryQuantity,
               weightValue: variant.weightValue,
               weightUnit: variant.weightUnit,
