@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsArray, IsUUID } from 'class-validator';
 
 export class CreateCollectionDto {
   @IsString()
@@ -14,5 +14,8 @@ export class CreateCollectionDto {
   @IsOptional()
   @IsUrl()
   imageUrl?: string;
-}
 
+  @IsArray()
+  @IsUUID('4', { each: true })
+  productIds: string[];
+}

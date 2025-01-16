@@ -8,9 +8,36 @@ export class CollectionService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCollectionDto: CreateCollectionDto) {
-    return this.prisma.collection.create({
-      data: createCollectionDto,
-    });
+    const { productIds, ...collectionData } = createCollectionDto;
+
+    console.log('Creating collection with data:', collectionData);
+    console.log('Linking products:', productIds);
+
+    try {
+      const createdCollection = await this.prisma.collection.create({
+        data: {
+          ...collectionData,
+          products: {
+            connect: productIds.map(id => ({ id })),
+          },
+        },
+        include: {
+          products: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+        },
+      });
+
+      console.log('Collection created successfully:', createdCollection);
+      return createdCollection;
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      throw new Error('Failed to create collection'); // Re-throw a more generic error for the client
+    }
   }
 
   async findAll() {
