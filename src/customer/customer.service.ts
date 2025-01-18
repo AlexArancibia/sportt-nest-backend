@@ -18,17 +18,22 @@ export class CustomerService {
     const hashedPassword = await encrypt(customerData.password);
 
     return this.prisma.$transaction(async (prisma) => {
+      const customerCreateData: any = {
+        ...customerData,
+        password: hashedPassword,
+      };
+
+      if (addresses && addresses.length > 0) {
+        customerCreateData.addresses = {
+          create: addresses.map((address, index) => ({
+            ...address,
+            isDefault: index === 0 // Set the first address as default
+          }))
+        };
+      }
+
       const customer = await prisma.customer.create({
-        data: {
-          ...customerData,
-          password: hashedPassword,
-          addresses: {
-            create: addresses.map((address, index) => ({
-              ...address,
-              isDefault: index === 0 // Set the first address as default
-            }))
-          },
-        },
+        data: customerCreateData,
         include: {
           addresses: true,
         },
