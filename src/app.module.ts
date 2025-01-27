@@ -21,6 +21,7 @@ import { CouponModule } from './coupon/coupon.module';
 import { RefundModule } from './refund/refund.module';
 import { PostModule } from './post/post.module';
 import { HeroSectionModule } from './hero-section/hero-section.module';
+import { OrderModule } from './order/order.module';
  
  
 
@@ -68,6 +69,8 @@ import { HeroSectionModule } from './hero-section/hero-section.module';
     PostModule,
  
     HeroSectionModule,
+ 
+    OrderModule,
  
   ],
 })
