@@ -14,6 +14,7 @@ import { CurrencyModule } from './currency/currency.module';
 import { ShopModule } from './shop/shop.module';
 import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
 import { ProductModule } from './product/product.module';
+ import { ShippingMethodsModule } from './shipping-methods/shipping-methods.module';
  
  
 
@@ -47,6 +48,8 @@ import { ProductModule } from './product/product.module';
     ExchangeRateModule,
  
     ProductModule,
+ 
+    ShippingMethodsModule,
  
   ],
 })

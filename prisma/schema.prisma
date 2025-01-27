@@ -336,7 +336,6 @@ model OrderItem {
   price              Decimal   // Price per unit at the time of order
   totalDiscount      Decimal   @default(0) // Total discount applied to this item
   refundLineItems    RefundLineItem[] // Refund line items for this order item
-  discountAllocations OrderItemDiscountAllocation[] // Discount allocations for this order item
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
@@ -420,17 +419,7 @@ model ShippingMethod {
   updatedAt   DateTime           @updatedAt
 }
 
-// Model for order item discount allocations
-model OrderItemDiscountAllocation {
-  id            String    @id @default(dbgenerated("'oida_' || substr(gen_random_uuid()::text, 1, 13)"))
-  orderItem     OrderItem @relation(fields: [orderItemId], references: [id])
-  orderItemId   String    // ID of the order item this discount allocation belongs to
-  amount        Decimal   // Amount of discount allocated to this item
-  discountApplicationIndex Int // Index indicating the order of discount application
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
+ 
 model Content {
   id          String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
   title       String      // Title of the content

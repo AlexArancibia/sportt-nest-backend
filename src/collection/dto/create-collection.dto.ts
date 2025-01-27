@@ -18,4 +18,12 @@ export class CreateCollectionDto {
   @IsArray()
   @IsUUID('4', { each: true })
   productIds: string[];
+
+  @IsString()
+  @IsOptional()
+  metaTitle?: string;
+
+  @IsString()
+  @IsOptional()
+  metaDescription?: string // Meta description for SEO?: string;
 }
