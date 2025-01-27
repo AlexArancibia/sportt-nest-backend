@@ -1,62 +1,72 @@
 import { IsString, IsEmail, IsOptional, IsBoolean, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateCustomerAddressDto {
+class CreateAddressDto {
   @IsString()
-  address1: string;
-
-  @IsOptional()
-  @IsString()
-  address2?: string;
+  firstName: string
 
   @IsString()
-  city: string;
-
-  @IsOptional()
-  @IsString()
-  province?: string;
-
-  @IsString()
-  zip: string;
-
-  @IsString()
-  country: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
+  lastName: string
 
   @IsOptional()
   @IsBoolean()
-  isDefault?: boolean;
+  isDefault?: boolean
+
+  @IsOptional()
+  @IsString()
+  company?: string
+
+  @IsString()
+  address1: string
+
+  @IsOptional()
+  @IsString()
+  address2?: string
+
+  @IsString()
+  city: string
+
+  @IsOptional()
+  @IsString()
+  province?: string
+
+  @IsString()
+  zip: string
+
+  @IsString()
+  country: string
+
+  @IsOptional()
+  @IsString()
+  phone?: string
 }
 
 export class CreateCustomerDto {
   @IsEmail()
-  email: string;
+  email: string
 
   @IsString()
-  password: string;
-
-  @IsOptional()
-  @IsString()
-  firstName?: string;
+  password: string
 
   @IsOptional()
   @IsString()
-  lastName?: string;
+  firstName?: string
 
   @IsOptional()
   @IsString()
-  phone?: string;
+  lastName?: string
+
+  @IsOptional()
+  @IsString()
+  phone?: string
 
   @IsOptional()
   @IsBoolean()
-  acceptsMarketing?: boolean;
+  acceptsMarketing?: boolean
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCustomerAddressDto)
-  addresses: CreateCustomerAddressDto[];
+  @Type(() => CreateAddressDto)
+  addresses?: CreateAddressDto[]
 }
-

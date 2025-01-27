@@ -4,7 +4,7 @@ import { Request } from "express";
 
 @Injectable()
 export class CustomerAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -14,31 +14,18 @@ export class CustomerAuthGuard implements CanActivate {
       throw new UnauthorizedException("Authorization token is missing");
     }
 
-    try {
-      let payload;
-      
-      // Try to verify with CUSTOMER_JWT_SECRET
+    const secrets = [process.env.CUSTOMER_JWT_SECRET, process.env.SECRET];
+
+    for (const secret of secrets) {
       try {
-        payload = await this.jwtService.verifyAsync(token, {
-          secret: process.env.CUSTOMER_JWT_SECRET,
-        });
-
-        return true
-      } catch (error) {
-
-        try {
-          payload = await this.jwtService.verifyAsync(token, {
-            secret: process.env.SECRET,
-          });
-          
-        } catch (error) {
-          throw new UnauthorizedException("Invalid token")          
-        }
+        await this.jwtService.verifyAsync(token, { secret });
+        return true; // Token is valid
+      } catch {
+        // Continue to the next secret if verification fails
       }
- 
-    } catch (error) {
-      throw new UnauthorizedException("Invalid token");
     }
+
+    throw new UnauthorizedException("Invalid token");
   }
 
   private extractToken(request: Request): string | undefined {

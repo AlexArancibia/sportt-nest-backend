@@ -14,22 +14,22 @@ export class CustomerService {
   ) {}
 
   async create(createCustomerDto: CreateCustomerDto) {
-    const { addresses, ...customerData } = createCustomerDto;
-    const hashedPassword = await encrypt(customerData.password);
+    const { addresses, ...customerData } = createCustomerDto
+    const hashedPassword = await encrypt(customerData.password)
 
     return this.prisma.$transaction(async (prisma) => {
       const customerCreateData: any = {
         ...customerData,
         password: hashedPassword,
-      };
+      }
 
       if (addresses && addresses.length > 0) {
         customerCreateData.addresses = {
           create: addresses.map((address, index) => ({
             ...address,
-            isDefault: index === 0 // Set the first address as default
-          }))
-        };
+            isDefault: index === 0, // Set the first address as default
+          })),
+        }
       }
 
       const customer = await prisma.customer.create({
@@ -37,38 +37,38 @@ export class CustomerService {
         include: {
           addresses: true,
         },
-      });
+      })
 
       // Remove password from the returned object
-      const { password, ...customerWithoutPassword } = customer;
-      return customerWithoutPassword;
-    });
+      const { password, ...customerWithoutPassword } = customer
+      return customerWithoutPassword
+    })
   }
 
   async login(loginCustomerDto: LoginCustomerDto) {
     try {
       const customer = await this.prisma.customer.findUnique({
         where: { email: loginCustomerDto.email },
-      });
+      })
 
       if (!customer) {
-        throw new UnauthorizedException('Email o contraseña inválidos.');
+        throw new UnauthorizedException("Email o contraseña inválidos.")
       }
 
-      const isPasswordMatch = await compare(loginCustomerDto.password, customer.password);
+      const isPasswordMatch = await compare(loginCustomerDto.password, customer.password)
 
       if (!isPasswordMatch) {
-        throw new UnauthorizedException('Email o contraseña inválidos.');
+        throw new UnauthorizedException("Email o contraseña inválidos.")
       }
 
-      const { password, ...customerWithoutPassword } = customer;
-      const access_token = await this.jwtService.signAsync(customerWithoutPassword);
-      return { access_token, userInfo: customerWithoutPassword };
-    } catch(error) {
+      const { password, ...customerWithoutPassword } = customer
+      const access_token = await this.jwtService.signAsync(customerWithoutPassword)
+      return { access_token, userInfo: customerWithoutPassword }
+    } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        throw error
       }
-      throw new InternalServerErrorException('Error al hacer login');
+      throw new InternalServerErrorException("Error al hacer login")
     }
   }
 
@@ -77,7 +77,7 @@ export class CustomerService {
       include: {
         addresses: true,
       },
-    });
+    })
   }
 
   async findOne(id: string) {
@@ -86,81 +86,82 @@ export class CustomerService {
       include: {
         addresses: true,
       },
-    });
+    })
 
     if (!customer) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
+      throw new NotFoundException(`Customer with ID ${id} not found`)
     }
 
-    return customer;
+    return customer
   }
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto) {
-    const { addresses, ...customerData } = updateCustomerDto;
+    const { addresses, ...customerData } = updateCustomerDto
 
     return this.prisma.$transaction(async (prisma) => {
       const updatedCustomer = await prisma.customer.update({
         where: { id },
         data: {
           ...customerData,
-          addresses: addresses ? {
-            upsert: addresses.map(address => ({
-              where: { id: address.id || 'new' }, // 'new' for creating new addresses
-              create: {
-                address1: address.address1,
-                address2: address.address2,
-                city: address.city,
-                province: address.province,
-                zip: address.zip,
-                country: address.country,
-                phone: address.phone,
-                isDefault: address.isDefault,
-              },
-              update: {
-                address1: address.address1,
-                address2: address.address2,
-                city: address.city,
-                province: address.province,
-                zip: address.zip,
-                country: address.country,
-                phone: address.phone,
-                isDefault: address.isDefault,
-              },
-            })),
-          } : undefined,
+          addresses: addresses
+            ? {
+                upsert: addresses.map((address) => ({
+                  where: { id: address.id || "new" }, // 'new' for creating new addresses
+                  create: {
+                    address1: address.address1,
+                    address2: address.address2,
+                    city: address.city,
+                    province: address.province,
+                    zip: address.zip,
+                    country: address.country,
+                    phone: address.phone,
+                    isDefault: address.isDefault,
+                  },
+                  update: {
+                    address1: address.address1,
+                    address2: address.address2,
+                    city: address.city,
+                    province: address.province,
+                    zip: address.zip,
+                    country: address.country,
+                    phone: address.phone,
+                    isDefault: address.isDefault,
+                  },
+                })),
+              }
+            : undefined,
         },
         include: {
           addresses: true,
         },
-      });
+      })
 
-      return updatedCustomer;
-    });
+      return updatedCustomer
+    })
   }
 
   async remove(id: string) {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
       include: { addresses: true },
-    });
+    })
 
     if (!customer) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
+      throw new NotFoundException(`Customer with ID ${id} not found`)
     }
 
     return this.prisma.$transaction(async (prisma) => {
       // Delete all addresses associated with the customer
       await prisma.address.deleteMany({
         where: { customerId: id },
-      });
+      })
 
       // Delete the customer
       const deletedCustomer = await prisma.customer.delete({
         where: { id },
-      });
+      })
 
-      return deletedCustomer;
-    });
+      return deletedCustomer
+    })
   }
 }
-
