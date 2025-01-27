@@ -19,6 +19,8 @@ import { PaymentProvidersModule } from './payment-providers/payment-providers.mo
 import { PaymentTransactionModule } from './payment-transaction/payment-transaction.module';
 import { CouponModule } from './coupon/coupon.module';
 import { RefundModule } from './refund/refund.module';
+import { PostModule } from './post/post.module';
+import { HeroSectionModule } from './hero-section/hero-section.module';
  
  
 
@@ -62,6 +64,10 @@ import { RefundModule } from './refund/refund.module';
     CouponModule,
  
     RefundModule,
+ 
+    PostModule,
+ 
+    HeroSectionModule,
  
   ],
 })
