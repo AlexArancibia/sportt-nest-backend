@@ -150,7 +150,7 @@ export class CustomerService {
 
     return this.prisma.$transaction(async (prisma) => {
       // Delete all addresses associated with the customer
-      await prisma.customerAddress.deleteMany({
+      await prisma.address.deleteMany({
         where: { customerId: id },
       });
 

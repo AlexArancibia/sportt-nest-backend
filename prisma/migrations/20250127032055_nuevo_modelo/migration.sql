@@ -28,6 +28,9 @@ CREATE TYPE "ContentType" AS ENUM ('PAGE', 'BLOG_POST');
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MANAGER', 'EDITOR', 'CUSTOMER_SERVICE');
 
+-- CreateEnum
+CREATE TYPE "ShippingStatus" AS ENUM ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'RETURNED');
+
 -- CreateTable
 CREATE TABLE "ShopSettings" (
     "id" TEXT NOT NULL DEFAULT 'shop_' || substr(gen_random_uuid()::text, 1, 13),
@@ -89,9 +92,12 @@ CREATE TABLE "Category" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
+    "imageUrl" TEXT,
     "parentId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );
@@ -104,13 +110,15 @@ CREATE TABLE "Product" (
     "slug" TEXT NOT NULL,
     "vendor" TEXT,
     "status" "ProductStatus" NOT NULL DEFAULT 'DRAFT',
+    "imageUrls" TEXT[],
     "sku" TEXT,
     "inventoryQuantity" INTEGER NOT NULL DEFAULT 0,
     "weightValue" DECIMAL(65,30),
-    "weightUnit" TEXT,
     "isArchived" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
@@ -134,11 +142,10 @@ CREATE TABLE "ProductVariant" (
     "title" TEXT NOT NULL,
     "sku" TEXT,
     "attributes" JSONB,
-    "imageId" TEXT,
+    "imageUrl" TEXT,
     "compareAtPrice" DECIMAL(65,30),
     "inventoryQuantity" INTEGER NOT NULL DEFAULT 0,
     "weightValue" DECIMAL(65,30),
-    "weightUnit" TEXT,
     "position" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -159,20 +166,6 @@ CREATE TABLE "VariantPrice" (
 );
 
 -- CreateTable
-CREATE TABLE "ProductImage" (
-    "id" TEXT NOT NULL DEFAULT 'img_' || substr(gen_random_uuid()::text, 1, 13),
-    "productId" TEXT NOT NULL,
-    "variantId" TEXT,
-    "src" TEXT NOT NULL,
-    "alt" TEXT,
-    "position" INTEGER NOT NULL DEFAULT 1,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Customer" (
     "id" TEXT NOT NULL DEFAULT 'cu_' || substr(gen_random_uuid()::text, 1, 13),
     "email" TEXT NOT NULL,
@@ -188,24 +181,6 @@ CREATE TABLE "Customer" (
 );
 
 -- CreateTable
-CREATE TABLE "CustomerAddress" (
-    "id" TEXT NOT NULL DEFAULT 'addr_' || substr(gen_random_uuid()::text, 1, 13),
-    "customerId" TEXT NOT NULL,
-    "address1" TEXT NOT NULL,
-    "address2" TEXT,
-    "city" TEXT NOT NULL,
-    "province" TEXT,
-    "zip" TEXT NOT NULL,
-    "country" TEXT NOT NULL,
-    "phone" TEXT,
-    "isDefault" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "CustomerAddress_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Order" (
     "id" TEXT NOT NULL DEFAULT 'ord_' || substr(gen_random_uuid()::text, 1, 13),
     "customerId" TEXT,
@@ -214,15 +189,28 @@ CREATE TABLE "Order" (
     "phone" TEXT,
     "financialStatus" "OrderFinancialStatus",
     "fulfillmentStatus" "OrderFulfillmentStatus",
-    "currency" TEXT NOT NULL,
+    "currencyId" TEXT NOT NULL,
     "totalPrice" DECIMAL(65,30) NOT NULL,
     "subtotalPrice" DECIMAL(65,30) NOT NULL,
     "totalTax" DECIMAL(65,30) NOT NULL,
     "totalDiscounts" DECIMAL(65,30) NOT NULL,
     "shippingAddressId" TEXT,
     "billingAddressId" TEXT,
+    "couponId" TEXT,
     "paymentProviderId" TEXT,
+    "paymentStatus" TEXT,
+    "paymentDetails" JSONB,
     "shippingMethodId" TEXT,
+    "shippingStatus" "ShippingStatus" NOT NULL DEFAULT 'PENDING',
+    "trackingNumber" TEXT,
+    "trackingUrl" TEXT,
+    "estimatedDeliveryDate" TIMESTAMP(3),
+    "shippedAt" TIMESTAMP(3),
+    "deliveredAt" TIMESTAMP(3),
+    "customerNotes" TEXT,
+    "internalNotes" TEXT,
+    "source" TEXT,
+    "preferredDeliveryDate" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -250,6 +238,7 @@ CREATE TABLE "Address" (
     "id" TEXT NOT NULL DEFAULT 'addr_' || substr(gen_random_uuid()::text, 1, 13),
     "firstName" TEXT,
     "lastName" TEXT,
+    "isDefault" BOOLEAN DEFAULT false,
     "company" TEXT,
     "address1" TEXT NOT NULL,
     "address2" TEXT,
@@ -258,36 +247,11 @@ CREATE TABLE "Address" (
     "zip" TEXT NOT NULL,
     "country" TEXT NOT NULL,
     "phone" TEXT,
+    "customerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Address_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Fulfillment" (
-    "id" TEXT NOT NULL DEFAULT 'ful_' || substr(gen_random_uuid()::text, 1, 13),
-    "orderId" TEXT NOT NULL,
-    "status" "FulfillmentStatus" NOT NULL,
-    "trackingCompany" TEXT,
-    "trackingNumber" TEXT,
-    "trackingUrl" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Fulfillment_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "FulfillmentLineItem" (
-    "id" TEXT NOT NULL DEFAULT 'fli_' || substr(gen_random_uuid()::text, 1, 13),
-    "fulfillmentId" TEXT NOT NULL,
-    "orderItemId" TEXT NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "FulfillmentLineItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -319,74 +283,32 @@ CREATE TABLE "RefundLineItem" (
 );
 
 -- CreateTable
-CREATE TABLE "Location" (
-    "id" TEXT NOT NULL DEFAULT 'loc_' || substr(gen_random_uuid()::text, 1, 13),
-    "name" TEXT NOT NULL,
-    "active" BOOLEAN NOT NULL DEFAULT true,
-    "address1" TEXT,
-    "address2" TEXT,
-    "city" TEXT,
-    "zip" TEXT,
-    "province" TEXT,
-    "country" TEXT,
-    "phone" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Location_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Collection" (
     "id" TEXT NOT NULL DEFAULT 'col_' || substr(gen_random_uuid()::text, 1, 13),
     "title" TEXT NOT NULL,
     "description" TEXT,
     "slug" TEXT NOT NULL,
+    "imageUrl" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
 
     CONSTRAINT "Collection_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "OrderDiscountCode" (
-    "id" TEXT NOT NULL DEFAULT 'odc_' || substr(gen_random_uuid()::text, 1, 13),
-    "orderId" TEXT NOT NULL,
-    "code" TEXT NOT NULL,
-    "amount" DECIMAL(65,30) NOT NULL,
-    "type" "DiscountType" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "OrderDiscountCode_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "OrderTaxLine" (
-    "id" TEXT NOT NULL DEFAULT 'otl_' || substr(gen_random_uuid()::text, 1, 13),
-    "orderId" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "rate" DECIMAL(65,30) NOT NULL,
+CREATE TABLE "ShippingMethod" (
+    "id" TEXT NOT NULL DEFAULT 'sm_' || substr(gen_random_uuid()::text, 1, 13),
+    "name" TEXT NOT NULL,
+    "description" TEXT,
     "price" DECIMAL(65,30) NOT NULL,
-    "channelLiable" BOOLEAN NOT NULL,
+    "estimatedDeliveryTime" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "OrderTaxLine_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "OrderItemTaxLine" (
-    "id" TEXT NOT NULL DEFAULT 'oitl_' || substr(gen_random_uuid()::text, 1, 13),
-    "orderItemId" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "rate" DECIMAL(65,30) NOT NULL,
-    "price" DECIMAL(65,30) NOT NULL,
-    "channelLiable" BOOLEAN NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "OrderItemTaxLine_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ShippingMethod_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -402,34 +324,6 @@ CREATE TABLE "OrderItemDiscountAllocation" (
 );
 
 -- CreateTable
-CREATE TABLE "PaymentProvider" (
-    "id" TEXT NOT NULL DEFAULT 'pp_' || substr(gen_random_uuid()::text, 1, 13),
-    "name" TEXT NOT NULL,
-    "type" "PaymentProviderType" NOT NULL,
-    "description" TEXT,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "credentials" JSONB,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PaymentProvider_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ShippingMethod" (
-    "id" TEXT NOT NULL DEFAULT 'sm_' || substr(gen_random_uuid()::text, 1, 13),
-    "name" TEXT NOT NULL,
-    "type" "ShippingMethodType" NOT NULL,
-    "description" TEXT,
-    "price" DECIMAL(65,30) NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ShippingMethod_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Content" (
     "id" TEXT NOT NULL DEFAULT 'cont_' || substr(gen_random_uuid()::text, 1, 13),
     "title" TEXT NOT NULL,
@@ -438,10 +332,51 @@ CREATE TABLE "Content" (
     "type" "ContentType" NOT NULL,
     "author" TEXT,
     "published" BOOLEAN NOT NULL DEFAULT false,
+    "publishedAt" TIMESTAMP(3),
+    "featuredImage" TEXT,
+    "excerpt" TEXT,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
+    "tags" TEXT[],
+    "category" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Content_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentProvider" (
+    "id" TEXT NOT NULL DEFAULT 'pp_' || substr(gen_random_uuid()::text, 1, 13),
+    "name" TEXT NOT NULL,
+    "type" "PaymentProviderType" NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "credentials" JSONB,
+    "currencyId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PaymentProvider_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Coupon" (
+    "id" TEXT NOT NULL DEFAULT 'coup_' || substr(gen_random_uuid()::text, 1, 13),
+    "code" TEXT NOT NULL,
+    "description" TEXT,
+    "type" "DiscountType" NOT NULL,
+    "value" DECIMAL(65,30) NOT NULL,
+    "minPurchase" DECIMAL(65,30),
+    "maxUses" INTEGER,
+    "usedCount" INTEGER NOT NULL DEFAULT 0,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -456,6 +391,24 @@ CREATE TABLE "User" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentTransaction" (
+    "id" TEXT NOT NULL DEFAULT 'pt_' || substr(gen_random_uuid()::text, 1, 13),
+    "orderId" TEXT NOT NULL,
+    "paymentProviderId" TEXT NOT NULL,
+    "amount" DECIMAL(65,30) NOT NULL,
+    "currencyId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "transactionId" TEXT,
+    "paymentMethod" TEXT,
+    "errorMessage" TEXT,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PaymentTransaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -483,11 +436,35 @@ CREATE TABLE "_CategoryToProduct" (
 );
 
 -- CreateTable
+CREATE TABLE "_CategoryToCoupon" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_CategoryToCoupon_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
 CREATE TABLE "_CollectionToProduct" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
 
     CONSTRAINT "_CollectionToProduct_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_CollectionToCoupon" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_CollectionToCoupon_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_CouponToProduct" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_CouponToProduct_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -509,31 +486,28 @@ CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
 CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
+CREATE INDEX "Product_status_vendor_idx" ON "Product"("status", "vendor");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProductPrice_productId_currencyId_key" ON "ProductPrice"("productId", "currencyId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductVariant_sku_key" ON "ProductVariant"("sku");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ProductVariant_imageId_key" ON "ProductVariant"("imageId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "VariantPrice_variantId_currencyId_key" ON "VariantPrice"("variantId", "currencyId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductImage_variantId_key" ON "ProductImage"("variantId");
+CREATE UNIQUE INDEX "Customer_email_key" ON "Customer"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Customer_email_key" ON "Customer"("email");
+CREATE INDEX "Order_orderNumber_customerId_financialStatus_fulfillmentSta_idx" ON "Order"("orderNumber", "customerId", "financialStatus", "fulfillmentStatus");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Collection_slug_key" ON "Collection"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Content_slug_key" ON "Content"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Coupon_code_key" ON "Coupon"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
@@ -548,7 +522,16 @@ CREATE INDEX "_BaseCurrency_B_index" ON "_BaseCurrency"("B");
 CREATE INDEX "_CategoryToProduct_B_index" ON "_CategoryToProduct"("B");
 
 -- CreateIndex
+CREATE INDEX "_CategoryToCoupon_B_index" ON "_CategoryToCoupon"("B");
+
+-- CreateIndex
 CREATE INDEX "_CollectionToProduct_B_index" ON "_CollectionToProduct"("B");
+
+-- CreateIndex
+CREATE INDEX "_CollectionToCoupon_B_index" ON "_CollectionToCoupon"("B");
+
+-- CreateIndex
+CREATE INDEX "_CouponToProduct_B_index" ON "_CouponToProduct"("B");
 
 -- AddForeignKey
 ALTER TABLE "ShopSettings" ADD CONSTRAINT "ShopSettings_defaultCurrencyId_fkey" FOREIGN KEY ("defaultCurrencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -578,22 +561,19 @@ ALTER TABLE "VariantPrice" ADD CONSTRAINT "VariantPrice_variantId_fkey" FOREIGN 
 ALTER TABLE "VariantPrice" ADD CONSTRAINT "VariantPrice_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariant"("imageId") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CustomerAddress" ADD CONSTRAINT "CustomerAddress_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_shippingAddressId_fkey" FOREIGN KEY ("shippingAddressId") REFERENCES "Address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_billingAddressId_fkey" FOREIGN KEY ("billingAddressId") REFERENCES "Address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "Coupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_paymentProviderId_fkey" FOREIGN KEY ("paymentProviderId") REFERENCES "PaymentProvider"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -611,13 +591,7 @@ ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariant"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Fulfillment" ADD CONSTRAINT "Fulfillment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "FulfillmentLineItem" ADD CONSTRAINT "FulfillmentLineItem_fulfillmentId_fkey" FOREIGN KEY ("fulfillmentId") REFERENCES "Fulfillment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "FulfillmentLineItem" ADD CONSTRAINT "FulfillmentLineItem_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Address" ADD CONSTRAINT "Address_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Refund" ADD CONSTRAINT "Refund_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -629,16 +603,19 @@ ALTER TABLE "RefundLineItem" ADD CONSTRAINT "RefundLineItem_refundId_fkey" FOREI
 ALTER TABLE "RefundLineItem" ADD CONSTRAINT "RefundLineItem_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderDiscountCode" ADD CONSTRAINT "OrderDiscountCode_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderTaxLine" ADD CONSTRAINT "OrderTaxLine_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderItemTaxLine" ADD CONSTRAINT "OrderItemTaxLine_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "OrderItemDiscountAllocation" ADD CONSTRAINT "OrderItemDiscountAllocation_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentProvider" ADD CONSTRAINT "PaymentProvider_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_paymentProviderId_fkey" FOREIGN KEY ("paymentProviderId") REFERENCES "PaymentProvider"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_AcceptedCurrencies" ADD CONSTRAINT "_AcceptedCurrencies_A_fkey" FOREIGN KEY ("A") REFERENCES "Currency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -659,7 +636,25 @@ ALTER TABLE "_CategoryToProduct" ADD CONSTRAINT "_CategoryToProduct_A_fkey" FORE
 ALTER TABLE "_CategoryToProduct" ADD CONSTRAINT "_CategoryToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "_CategoryToCoupon" ADD CONSTRAINT "_CategoryToCoupon_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CategoryToCoupon" ADD CONSTRAINT "_CategoryToCoupon_B_fkey" FOREIGN KEY ("B") REFERENCES "Coupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_CollectionToProduct" ADD CONSTRAINT "_CollectionToProduct_A_fkey" FOREIGN KEY ("A") REFERENCES "Collection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CollectionToProduct" ADD CONSTRAINT "_CollectionToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CollectionToCoupon" ADD CONSTRAINT "_CollectionToCoupon_A_fkey" FOREIGN KEY ("A") REFERENCES "Collection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CollectionToCoupon" ADD CONSTRAINT "_CollectionToCoupon_B_fkey" FOREIGN KEY ("B") REFERENCES "Coupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CouponToProduct" ADD CONSTRAINT "_CouponToProduct_A_fkey" FOREIGN KEY ("A") REFERENCES "Coupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CouponToProduct" ADD CONSTRAINT "_CouponToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;

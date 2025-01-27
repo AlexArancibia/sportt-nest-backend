@@ -89,6 +89,14 @@ enum UserRole {
   CUSTOMER_SERVICE
 }
 
+enum ShippingStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  RETURNED
+}
+
 // Model for storing shop-wide settings
 model ShopSettings {
   id                String           @id @default(dbgenerated("'shop_' || substr(gen_random_uuid()::text, 1, 13)"))
@@ -132,11 +140,14 @@ model Currency {
   baseForShops       ShopSettings[] @relation("BaseCurrency")
   fromExchangeRates  ExchangeRate[] @relation("FromCurrency")
   toExchangeRates    ExchangeRate[] @relation("ToCurrency")
+  orders             Order[]
+  paymentProviders   PaymentProvider[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
   ProductPrice ProductPrice[]
   VariantPrice VariantPrice[]
+  paymentTransactions PaymentTransaction[]
 }
 
 // Model for storing exchange rates between currencies
@@ -160,12 +171,17 @@ model Category {
   name         String     // Name of the category
   slug         String     @unique // URL-friendly version of the name
   description  String?    // Description of the category
+  imageUrl     String?
   parentId     String?    // ID of the parent category (for nested categories)
   parent       Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
   children     Category[] @relation("CategoryToParent")
   products     Product[]  // Products belonging to this category
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  metaTitle    String?    // Meta title for SEO
+  metaDescription String? // Meta description for SEO
+
+  Coupon Coupon[]
 }
 
 // Model for products
@@ -185,10 +201,15 @@ model Product {
   sku               String?          // Stock Keeping Unit
   inventoryQuantity Int             @default(0) // Available quantity in inventory
   weightValue       Decimal?        // Weight of the product
-  weightUnit        String?         // Unit of the weight (e.g., kg, lb)
   isArchived        Boolean         @default(false) // Whether the product is archived
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  metaTitle         String?         // Meta title for SEO
+  metaDescription   String?         // Meta description for SEO
+
+  Coupon Coupon[]
+
+  @@index([status, vendor])
 }
 
 // Model for product prices in different currencies
@@ -218,7 +239,6 @@ model ProductVariant {
   compareAtPrice    Decimal?      // Original price for comparison (e.g., for sales)
   inventoryQuantity Int           @default(0) // Available quantity of this variant
   weightValue       Decimal?      // Weight of the variant
-  weightUnit        String?       // Unit of the weight
   position          Int           @default(1) // Position of the variant in the list
   orderItems        OrderItem[]   // Order items referencing this variant
   createdAt         DateTime      @default(now())
@@ -249,26 +269,9 @@ model Customer {
   password         String            // Hashed password of the customer
   acceptsMarketing Boolean           @default(false) // Whether the customer accepts marketing emails
   orders           Order[]           // Orders placed by this customer
-  addresses        CustomerAddress[] // Addresses associated with this customer
+  addresses        Address[] // Addresses associated with this customer
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-}
-
-// Model for customer addresses
-model CustomerAddress {
-  id         String   @id @default(dbgenerated("'addr_' || substr(gen_random_uuid()::text, 1, 13)"))
-  customer   Customer @relation(fields: [customerId], references: [id])
-  customerId String   // ID of the customer this address belongs to
-  address1   String   // First line of the address
-  address2   String?  // Second line of the address
-  city       String   // City
-  province   String?  // Province or state
-  zip        String   // Zip or postal code
-  country    String   // Country
-  phone      String?  // Phone number associated with this address
-  isDefault  Boolean  @default(false) // Whether this is the default address for the customer
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 }
 
 // Model for orders
@@ -281,7 +284,8 @@ model Order {
   phone             String?                // Phone number for the order
   financialStatus   OrderFinancialStatus?  // Current financial status of the order
   fulfillmentStatus OrderFulfillmentStatus? // Current fulfillment status of the order
-  currency          String                 // Currency used for the order
+  currency          Currency                @relation(fields: [currencyId], references: [code])
+  currencyId        String                 // This will store the currency code
   totalPrice        Decimal                // Total price of the order
   subtotalPrice     Decimal                // Subtotal price (before tax and discounts)
   totalTax          Decimal                // Total tax amount
@@ -291,16 +295,31 @@ model Order {
   shippingAddress   Address?               @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddressId  String?                // ID of the billing address
   billingAddress    Address?               @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  fulfillments      Fulfillment[]          // Fulfillments associated with this order
   refunds           Refund[]               // Refunds associated with this order
-  discountCodes     OrderDiscountCode[]    // Discount codes applied to this order
-  taxLines          OrderTaxLine[]         // Tax lines for this order
+  coupon            Coupon?                @relation(fields: [couponId], references: [id])
+  couponId          String?                // ID of the coupon applied to this order
   paymentProvider   PaymentProvider?       @relation(fields: [paymentProviderId], references: [id])
   paymentProviderId String?                // ID of the payment provider used
+  paymentStatus     String?          // Status of the payment (e.g., "pending", "completed", "failed")
+  paymentDetails    Json?            // Additional payment details (e.g., transaction ID, payment method details)
   shippingMethod    ShippingMethod?        @relation(fields: [shippingMethodId], references: [id])
   shippingMethodId  String?                // ID of the shipping method used
+  shippingStatus    ShippingStatus         @default(PENDING) // Current shipping status
+  trackingNumber    String?                // Tracking number for the shipment
+  trackingUrl       String?                // URL to track the shipment
+  estimatedDeliveryDate DateTime?          // Estimated delivery date
+  shippedAt         DateTime?              // Date when the order was shipped
+  deliveredAt       DateTime?              // Date when the order was delivered
+  customerNotes     String?                // Notes from the customer about the order
+  internalNotes     String?                // Internal notes for staff (not visible to customer)
+  source            String?                // Source of the order (e.g., "website", "mobile app", "phone")
+  preferredDeliveryDate DateTime?          // Customer's preferred delivery date
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
+
+  PaymentTransaction PaymentTransaction[]
+
+  @@index([orderNumber, customerId, financialStatus, fulfillmentStatus])
 }
 
 // Model for order items
@@ -316,9 +335,7 @@ model OrderItem {
   quantity           Int       // Quantity ordered
   price              Decimal   // Price per unit at the time of order
   totalDiscount      Decimal   @default(0) // Total discount applied to this item
-  fulfillments       FulfillmentLineItem[] // Fulfillment line items for this order item
   refundLineItems    RefundLineItem[] // Refund line items for this order item
-  taxLines           OrderItemTaxLine[] // Tax lines for this order item
   discountAllocations OrderItemDiscountAllocation[] // Discount allocations for this order item
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -329,6 +346,7 @@ model Address {
   id                String   @id @default(dbgenerated("'addr_' || substr(gen_random_uuid()::text, 1, 13)"))
   firstName         String?  // First name associated with this address
   lastName          String?  // Last name associated with this address
+  isDefault         Boolean?  @default(false)
   company           String?  // Company name (if applicable)
   address1          String   // First line of the address
   address2          String?  // Second line of the address
@@ -339,34 +357,11 @@ model Address {
   phone             String?  // Phone number associated with this address
   ordersAsShipping  Order[]  @relation("ShippingAddress") // Orders using this as shipping address
   ordersAsBilling   Order[]  @relation("BillingAddress") // Orders using this as billing address
+  customer          Customer @relation(fields: [customerId], references: [id]) // Relación con Customer
+  customerId        String   // Campo para la clave foránea
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-}
 
-// Model for order fulfillments
-model Fulfillment {
-  id              String                @id @default(dbgenerated("'ful_' || substr(gen_random_uuid()::text, 1, 13)"))
-  order           Order                 @relation(fields: [orderId], references: [id])
-  orderId         String                // ID of the order this fulfillment belongs to
-  status          FulfillmentStatus     // Current status of the fulfillment
-  trackingCompany String?               // Shipping company handling the fulfillment
-  trackingNumber  String?               // Tracking number for the shipment
-  trackingUrl     String?               // URL to track the shipment
-  lineItems       FulfillmentLineItem[] // Line items included in this fulfillment
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-}
-
-// Model for fulfillment line items
-model FulfillmentLineItem {
-  id              String     @id @default(dbgenerated("'fli_' || substr(gen_random_uuid()::text, 1, 13)"))
-  fulfillment     Fulfillment @relation(fields: [fulfillmentId], references: [id])
-  fulfillmentId   String     // ID of the fulfillment this line item belongs to
-  orderItem       OrderItem  @relation(fields: [orderItemId], references: [id])
-  orderItemId     String     // ID of the order item being fulfilled
-  quantity        Int        // Quantity being fulfilled
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
 }
 
 // Model for refunds
@@ -397,22 +392,6 @@ model RefundLineItem {
   updatedAt     DateTime  @updatedAt
 }
 
-// Model for store locations
-model Location {
-  id        String   @id @default(dbgenerated("'loc_' || substr(gen_random_uuid()::text, 1, 13)"))
-  name      String   // Name of the location
-  active    Boolean  @default(true) // Whether the location is active
-  address1  String?  // First line of the address
-  address2  String?  // Second line of the address
-  city      String?  // City
-  zip       String?  // Zip or postal code
-  province  String?  // Province or state
-  country   String?  // Country
-  phone     String?  // Phone number for the location
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 // Model for product collections
 model Collection {
   id          String    @id @default(dbgenerated("'col_' || substr(gen_random_uuid()::text, 1, 13)"))
@@ -423,44 +402,22 @@ model Collection {
   imageUrl    String?   // URL of the collection's image
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  metaTitle   String?   // Meta title for SEO
+  metaDescription String? // Meta description for SEO
+
+  Coupon Coupon[]
 }
 
-// Model for order discount codes
-model OrderDiscountCode {
-  id              String       @id @default(dbgenerated("'odc_' || substr(gen_random_uuid()::text, 1, 13)"))
-  order           Order        @relation(fields: [orderId], references: [id])
-  orderId         String       // ID of the order this discount code was applied to
-  code            String       // The discount code used
-  amount          Decimal      // Amount of the discount
-  type            DiscountType // Type of discount applied
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-}
-
-// Model for order tax lines
-model OrderTaxLine {
-  id                      String   @id @default(dbgenerated("'otl_' || substr(gen_random_uuid()::text, 1, 13)"))
-  order                   Order    @relation(fields: [orderId], references: [id])
-  orderId                 String   // ID of the order this tax line belongs to
-  title                   String   // Title of the tax (e.g., "VAT", "Sales Tax")
-  rate                    Decimal  // Tax rate applied
-  price                   Decimal  // Amount of tax
-  channelLiable           Boolean  // Whether the sales channel is liable for remitting this tax
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-}
-
-// Model for order item tax lines
-model OrderItemTaxLine {
-  id            String    @id @default(dbgenerated("'oitl_' || substr(gen_random_uuid()::text, 1, 13)"))
-  orderItem     OrderItem @relation(fields: [orderItemId], references: [id])
-  orderItemId   String    // ID of the order item this tax line belongs to
-  title         String    // Title of the tax
-  rate          Decimal   // Tax rate applied
-  price         Decimal   // Amount of tax
-  channelLiable Boolean   // Whether the sales channel is liable for remitting this tax
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+model ShippingMethod {
+  id          String             @id @default(dbgenerated("'sm_' || substr(gen_random_uuid()::text, 1, 13)"))
+  name        String             // Name of the shipping method
+  description String?            // Description of the shipping method
+  price       Decimal            // Base price of the shipping method
+  estimatedDeliveryTime String?  // Estimated delivery time (e.g., "3-5 business days")
+  isActive    Boolean            @default(true) // Whether the method is active
+  orders      Order[]            // Orders using this shipping method
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 // Model for order item discount allocations
@@ -474,6 +431,25 @@ model OrderItemDiscountAllocation {
   updatedAt     DateTime  @updatedAt
 }
 
+model Content {
+  id          String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title       String      // Title of the content
+  slug        String      @unique // URL-friendly version of the title
+  body        String      // Main content of the page, blog post, news article, etc.
+  type        ContentType // Type of content
+  author      String?     // Author of the content
+  published   Boolean     @default(false) // Whether the content is published
+  publishedAt DateTime?   // Date when the content was published
+  featuredImage String?   // URL of the featured image
+  excerpt     String?     // Short excerpt or summary of the content
+  metaTitle   String?     // Meta title for SEO
+  metaDescription String? // Meta description for SEO
+  tags        String[]    // Tags associated with the content
+  category    String?     // Category of the content (e.g., for blog posts)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
 // Model for payment providers
 model PaymentProvider {
   id          String              @id @default(dbgenerated("'pp_' || substr(gen_random_uuid()::text, 1, 13)"))
@@ -483,34 +459,32 @@ model PaymentProvider {
   isActive    Boolean             @default(true) // Whether the provider is active
   credentials Json?               // Credentials for connecting to the provider (encrypted)
   orders      Order[]             // Orders processed by this provider
+  currency    Currency            @relation(fields: [currencyId], references: [id]) // Relation to Currency model
+  currencyId  String              // Foreign key for Currency
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+
+  PaymentTransaction PaymentTransaction[]
 }
 
-// Model for shipping methods
-model ShippingMethod {
-  id          String             @id @default(dbgenerated("'sm_' || substr(gen_random_uuid()::text, 1, 13)"))
-  name        String             // Name of the shipping method
-  type        ShippingMethodType // Type of shipping method
-  description String?            // Description of the shipping method
-  price       Decimal            // Price of the shipping method
-  isActive    Boolean            @default(true) // Whether the method is active
-  orders      Order[]            // Orders using this shipping method
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-}
-
-// Model for content (pages and blog posts)
-model Content {
-  id        String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
-  title     String      // Title of the content
-  slug      String      @unique // URL-friendly version of the title
-  body      String      // Main content of the page or blog post
-  type      ContentType // Type of content (page or blog post)
-  author    String?     // Author of the content
-  published Boolean     @default(false) // Whether the content is published
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+model Coupon {
+  id                  String       @id @default(dbgenerated("'coup_' || substr(gen_random_uuid()::text, 1, 13)"))
+  code                String       @unique
+  description         String?
+  type                DiscountType
+  value               Decimal
+  minPurchase         Decimal?
+  maxUses             Int?
+  usedCount           Int          @default(0)
+  startDate           DateTime
+  endDate             DateTime
+  isActive            Boolean      @default(true)
+  applicableProducts  Product[]    // Products to which the coupon can be applied
+  applicableCategories Category[]  // Categories to which the coupon can be applied
+  applicableCollections Collection[] // Collections to which the coupon can be applied
+  orders              Order[]      // Orders that used this coupon
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 }
 
 // Model for users (admin, managers, editors, etc.)
@@ -523,5 +497,23 @@ model User {
   role         UserRole    // Role of the user in the system
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+}
+
+model PaymentTransaction {
+  id                String   @id @default(dbgenerated("'pt_' || substr(gen_random_uuid()::text, 1, 13)"))
+  order             Order    @relation(fields: [orderId], references: [id])
+  orderId           String
+  paymentProvider   PaymentProvider @relation(fields: [paymentProviderId], references: [id])
+  paymentProviderId String
+  amount            Decimal
+  currency          Currency @relation(fields: [currencyId], references: [id])
+  currencyId        String
+  status            String   // e.g., "pending", "completed", "failed"
+  transactionId     String?  // ID provided by the payment gateway
+  paymentMethod     String?  // e.g., "credit_card", "bank_transfer"
+  errorMessage      String?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 

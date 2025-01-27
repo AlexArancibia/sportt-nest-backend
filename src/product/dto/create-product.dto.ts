@@ -1,104 +1,134 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsArray, ValidateNested, IsUUID, Min, IsJSON } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ProductStatus } from '@prisma/client';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+  IsUUID,
+  Min,
+  IsJSON,
+  IsBoolean,
+} from "class-validator"
+import { Type } from "class-transformer"
+import { ProductStatus } from "@prisma/client"
 
 export class CreateProductPriceDto {
   @IsUUID()
-  currencyId: string;
+  currencyId: string
 
   @IsNumber()
   @Min(0)
-  price: number;
+  price: number
 }
 
 export class CreateProductVariantDto {
   @IsString()
-  title: string;
+  title: string
 
   @IsOptional()
   @IsString()
-  sku?: string;
+  sku?: string
 
   @IsOptional()
   @IsString()
-  imageUrl?: string;
+  imageUrl?: string
 
   @IsNumber()
   @Min(0)
-  inventoryQuantity: number;
+  inventoryQuantity: number
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  weightValue?: number;
+  weightValue?: number
 
   @IsOptional()
   @IsString()
-  weightUnit?: string;
+  weightUnit?: string
 
   @ValidateNested({ each: true })
   @Type(() => CreateProductPriceDto)
-  prices: CreateProductPriceDto[];
-
+  prices: CreateProductPriceDto[]
 
   @IsJSON()
-  attributes: Record<string, any>;
+  attributes: Record<string, any>
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  compareAtPrice?: number
+
+  @IsNumber()
+  @Min(1)
+  position: number
 }
 
 export class CreateProductDto {
   @IsString()
-  title: string;
+  title: string
 
   @IsOptional()
   @IsString()
-  description?: string;
+  description?: string
 
   @IsString()
-  slug: string;
+  slug: string
 
   @IsOptional()
   @IsString()
-  vendor?: string;
+  vendor?: string
 
   @IsEnum(ProductStatus)
-  status: ProductStatus;
+  status: ProductStatus
 
   @IsArray()
   @IsString({ each: true })
-  categoryIds: string[];
+  categoryIds: string[]
 
   @IsArray()
   @IsString({ each: true })
-  imageUrls: string[];
+  imageUrls: string[]
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  collectionIds?: string[];
+  collectionIds?: string[]
 
   @IsOptional()
   @IsString()
-  sku?: string;
+  sku?: string
 
   @IsNumber()
   @Min(0)
-  inventoryQuantity: number;
+  inventoryQuantity: number
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  weightValue?: number;
+  weightValue?: number
 
   @IsOptional()
   @IsString()
-  weightUnit?: string;
+  weightUnit?: string
 
   @ValidateNested({ each: true })
   @Type(() => CreateProductPriceDto)
-  prices: CreateProductPriceDto[];
+  prices: CreateProductPriceDto[]
 
   @ValidateNested({ each: true })
   @Type(() => CreateProductVariantDto)
-  variants: CreateProductVariantDto[];
+  variants: CreateProductVariantDto[]
+
+  @IsBoolean()
+  isArchived: boolean
+
+  @IsOptional()
+  @IsString()
+  metaTitle?: string
+
+  @IsOptional()
+  @IsString()
+  metaDescription?: string
 }
 
