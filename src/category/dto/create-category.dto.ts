@@ -14,5 +14,14 @@ export class CreateCategoryDto {
   @IsString()
   @IsOptional()
   parentId?: string;
+
+  @IsString()
+  @IsOptional()
+  metaTitle?: string;
+
+  @IsString()
+  @IsOptional()
+  metaDescription?: string // Meta description for SEO?: string;
 }
 
+ 
