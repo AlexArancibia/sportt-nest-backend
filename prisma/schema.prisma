@@ -15,6 +15,20 @@ enum CurrencyPosition {
   AFTER  // Symbol appears after the amount (e.g., 100€)
 }
 
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostType {
+  BLOG
+  NEWS
+  PRODUCT_DESCRIPTION
+  PAGE
+}
+
+
 enum OrderFinancialStatus {
   PENDING
   AUTHORIZED
@@ -486,6 +500,8 @@ model User {
   role         UserRole    // Role of the user in the system
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  Post Post[]
 }
 
 model PaymentTransaction {
@@ -506,3 +522,65 @@ model PaymentTransaction {
   updatedAt         DateTime @updatedAt
 }
 
+
+model Post {
+  id                String       @id @default(dbgenerated("'post_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title             String
+  slug              String       @unique
+  type              PostType
+  status            PostStatus   @default(DRAFT)
+  content           Json         // Structured content as JSON
+  author            User         @relation(fields: [authorId], references: [id])
+  authorId          String
+  publishedAt       DateTime?
+  featuredImage     String?      // URL of the featured image
+  metaTitle         String?
+  metaDescription   String?
+  keywords          String[]
+  postCategories    PostCategory[]
+  tags              Tag[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model HeroSection {
+  id                String       @id @default(dbgenerated("'hero_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title             String
+  subtitle          String?
+  backgroundImage   String?      // URL of the background image
+  mobileBackgroundImage String?  
+  buttonText        String?
+  buttonLink        String?
+  alignment         String?      // e.g., "left", "center", "right"
+  textColor         String?
+  backgroundColor   String?
+  overlayOpacity    Float?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  isActive          Boolean      @default(true)
+  startDate         DateTime?    // When to start showing this hero section
+  endDate           DateTime?    // When to stop showing this hero section
+  customFields      Json?        // For any additional, custom data
+}
+
+model PostCategory {
+  id          String    @id @default(dbgenerated("'pcat_' || substr(gen_random_uuid()::text, 1, 13)"))
+  name        String
+  slug        String    @unique
+  description String?
+  parentId    String?
+  parent      PostCategory? @relation("PostCategoryHierarchy", fields: [parentId], references: [id])
+  children    PostCategory[] @relation("PostCategoryHierarchy")
+  posts       Post[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Tag {
+  id        String   @id @default(dbgenerated("'tag_' || substr(gen_random_uuid()::text, 1, 13)"))
+  name      String   @unique
+  slug      String   @unique
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

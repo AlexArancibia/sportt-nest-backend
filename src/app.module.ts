@@ -17,6 +17,8 @@ import { ProductModule } from './product/product.module';
  import { ShippingMethodsModule } from './shipping-methods/shipping-methods.module';
 import { PaymentProvidersModule } from './payment-providers/payment-providers.module';
 import { PaymentTransactionModule } from './payment-transaction/payment-transaction.module';
+import { CouponModule } from './coupon/coupon.module';
+import { RefundModule } from './refund/refund.module';
  
  
 
@@ -56,6 +58,10 @@ import { PaymentTransactionModule } from './payment-transaction/payment-transact
     PaymentProvidersModule,
  
     PaymentTransactionModule,
+ 
+    CouponModule,
+ 
+    RefundModule,
  
   ],
 })
