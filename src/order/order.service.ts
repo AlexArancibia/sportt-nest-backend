@@ -25,8 +25,6 @@ export class OrderService {
     // Create the order
     const order = await prisma.order.create({
       data: {
-        email: orderData.email,
-        phone: orderData.phone,
         totalPrice: orderData.totalPrice,
         subtotalPrice: orderData.subtotalPrice,
         totalTax: orderData.totalTax,
@@ -100,8 +98,6 @@ export class OrderService {
     return this.prisma.$transaction(async (prisma) => {
       // Prepare the update data
       const updateData: Prisma.OrderUpdateInput = {
-        email: orderData.email,
-        phone: orderData.phone,
         totalPrice: orderData.totalPrice,
         subtotalPrice: orderData.subtotalPrice,
         totalTax: orderData.totalTax,
