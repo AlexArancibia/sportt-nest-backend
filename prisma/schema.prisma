@@ -280,7 +280,7 @@ model Customer {
   firstName        String?           // First name of the customer
   lastName         String?           // Last name of the customer
   phone            String?           // Phone number of the customer
-  password         String            // Hashed password of the customer
+  password         String?            // Hashed password of the customer
   acceptsMarketing Boolean           @default(false) // Whether the customer accepts marketing emails
   orders           Order[]           // Orders placed by this customer
   addresses        Address[] // Addresses associated with this customer
@@ -294,11 +294,9 @@ model Order {
   customer          Customer?              @relation(fields: [customerId], references: [id])
   customerId        String?                // ID of the customer who placed the order
   orderNumber       Int                    // Unique number for the order
-  email             String?                // Email address for the order
-  phone             String?                // Phone number for the order
   financialStatus   OrderFinancialStatus?  // Current financial status of the order
   fulfillmentStatus OrderFulfillmentStatus? // Current fulfillment status of the order
-  currency          Currency                @relation(fields: [currencyId], references: [code])
+  currency          Currency                @relation(fields: [currencyId], references: [id])
   currencyId        String                 // This will store the currency code
   totalPrice        Decimal                // Total price of the order
   subtotalPrice     Decimal                // Subtotal price (before tax and discounts)
@@ -357,8 +355,6 @@ model OrderItem {
 // Model for addresses (used for shipping and billing)
 model Address {
   id                String   @id @default(dbgenerated("'addr_' || substr(gen_random_uuid()::text, 1, 13)"))
-  firstName         String?  // First name associated with this address
-  lastName          String?  // Last name associated with this address
   isDefault         Boolean?  @default(false)
   company           String?  // Company name (if applicable)
   address1          String   // First line of the address

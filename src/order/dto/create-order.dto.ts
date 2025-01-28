@@ -1,160 +1,120 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsDecimal,
-  IsArray,
-  ValidateNested,
-  IsUUID,
-  IsEmail,
-  IsPhoneNumber,
-  IsDate,
-  IsJSON,
-} from "class-validator"
-import { Type } from "class-transformer"
-import { OrderFinancialStatus, OrderFulfillmentStatus, ShippingStatus } from "@prisma/client"
- 
-
-class CreateOrderItemDto {
-  @IsUUID()
-  productId: string
-
-  @IsOptional()
-  @IsUUID()
-  variantId?: string
-
-  @IsString()
-  title: string
-
-  @IsDecimal()
-  @Type(() => Number)
-  quantity: number
-
-  @IsDecimal()
-  @Type(() => Number)
-  price: number
-
-  @IsOptional()
-  @IsDecimal()
-  @Type(() => Number)
-  totalDiscount?: number
-}
+import { OrderFinancialStatus, OrderFulfillmentStatus, ShippingStatus } from '@prisma/client';
+import { IsString, IsOptional, IsNumber, IsDecimal, IsDate, IsArray, IsEnum } from 'class-validator';
 
 export class CreateOrderDto {
-  @IsOptional()
-  @IsUUID()
-  customerId?: string
+  @IsString()
+  id: string;
 
   @IsOptional()
-  @IsEmail()
-  email?: string
+  @IsString()
+  customerId?: string;
+
+  @IsNumber()
+  orderNumber: number;
 
   @IsOptional()
-  @IsPhoneNumber()
-  phone?: string
+  @IsString()
+  email?: string;
 
   @IsOptional()
+  @IsString()
+  phone?: string;
+  
   @IsEnum(OrderFinancialStatus)
-  financialStatus?: OrderFinancialStatus
+  financialStatus: OrderFinancialStatus
+
+  @IsEnum(OrderFulfillmentStatus)
+  fulfillmentStatus: OrderFulfillmentStatus
 
   @IsOptional()
-  @IsEnum(OrderFulfillmentStatus)
-  fulfillmentStatus?: OrderFulfillmentStatus
-
-  @IsUUID()
-  currencyId: string
+  @IsString()
+  currencyId?: string;
 
   @IsDecimal()
-  @Type(() => Number)
-  totalPrice: number
+  totalPrice: number;
 
   @IsDecimal()
-  @Type(() => Number)
-  subtotalPrice: number
+  subtotalPrice: number;
 
   @IsDecimal()
-  @Type(() => Number)
-  totalTax: number
+  totalTax: number;
 
   @IsDecimal()
-  @Type(() => Number)
-  totalDiscounts: number
+  totalDiscounts: number;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateOrderItemDto)
-  lineItems: CreateOrderItemDto[]
-
-  @IsOptional()
-  @IsUUID()
-  shippingAddressId?: string
-
-  @IsOptional()
-  @IsUUID()
-  billingAddressId?: string
-
-  @IsOptional()
-  @IsUUID()
-  couponId?: string
-
-  @IsOptional()
-  @IsUUID()
-  paymentProviderId?: string
+  lineItems: any[]; // Replace with `OrderItemDto[]` if the `OrderItem` DTO is defined
 
   @IsOptional()
   @IsString()
-  paymentStatus?: string
+  shippingAddressId?: string;
 
   @IsOptional()
-  @IsJSON()
-  paymentDetails?: Record<string, any>
+  @IsString()
+  billingAddressId?: string;
 
   @IsOptional()
-  @IsUUID()
-  shippingMethodId?: string
+  @IsString()
+  couponId?: string;
 
   @IsOptional()
+  @IsString()
+  paymentProviderId?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentStatus?: string;
+
+  @IsOptional()
+  paymentDetails?: object;
+
+  @IsOptional()
+  @IsString()
+  shippingMethodId?: string;
+
   @IsEnum(ShippingStatus)
-  shippingStatus?: ShippingStatus
+  shippingStatus: ShippingStatus
 
   @IsOptional()
   @IsString()
-  trackingNumber?: string
+  trackingNumber?: string;
 
   @IsOptional()
   @IsString()
-  trackingUrl?: string
+  trackingUrl?: string;
 
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
-  estimatedDeliveryDate?: Date
+  estimatedDeliveryDate?: Date;
 
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
-  shippedAt?: Date
+  shippedAt?: Date;
 
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
-  deliveredAt?: Date
+  deliveredAt?: Date;
 
   @IsOptional()
   @IsString()
-  customerNotes?: string
+  customerNotes?: string;
 
   @IsOptional()
   @IsString()
-  internalNotes?: string
+  internalNotes?: string;
 
   @IsOptional()
   @IsString()
-  source?: string
+  source?: string;
 
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
-  preferredDeliveryDate?: Date
+  preferredDeliveryDate?: Date;
+
+  @IsDate()
+  createdAt: Date;
+
+  @IsOptional()
+  @IsDate()
+  updatedAt?: Date;
 }
-
