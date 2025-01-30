@@ -279,15 +279,8 @@ export class OrderService {
       this.prisma.order.count({ where }),
     ])
 
-    return {
-      orders,
-      meta: {
-        total,
-        skip: skip || 0,
-        take: take || 50,
-        hasMore: (skip || 0) + (take || 50) < total,
-      },
-    }
+    return orders
+  
   }
 }
 
